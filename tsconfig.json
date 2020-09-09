@@ -1,21 +1,14 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
-    "strict": true,
-    "moduleResolution": "node",
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "forceConsistentCasingInFileNames": true,
+    "target": "ES2017",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "skipLibCheck": true,
     "lib": [
-      "es2015",
-      "esnext.asynciterable"
+      "ES2017"
     ],
-    "sourceMap": true,
     "typeRoots": [
-      "../governance/node_modules/@types",
+      "./node_modules/@types",
       "./types"
     ],
     "types": [
@@ -27,7 +20,7 @@
     "**/*.ts"
   ],
   "exclude": [
-    "../governance/node_modules",
+    "node_modules",
     "build"
   ]
 }

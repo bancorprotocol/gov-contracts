@@ -53,7 +53,6 @@ IRewardDistributionRecipient
     event NewProposal(uint id, address creator, uint start, uint duration, address executor);
     event Vote(uint indexed id, address indexed voter, bool vote, uint weight);
     event ProposalFinished(uint indexed id, uint _for, uint _against, bool quorumReached);
-    event RegisterVoter(address voter, uint votes, uint totalVotes);
     event RevokeVoter(address voter, uint votes, uint totalVotes);
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
@@ -77,26 +76,8 @@ IRewardDistributionRecipient
         bool open;
     }
 
-    /* Fee collection for any other token */
-
-    function seize(IERC20 _token, uint amount) external {
-        require(msg.sender == governance, "!governance");
-        require(_token != token, "reward");
-        require(_token != vote, "vote");
-        _token.safeTransfer(governance, amount);
-    }
-
-    /* Fees breaker, to protect withdraws if anything ever goes wrong */
-
-    bool public breaker = false;
-
-    function setBreaker(bool _breaker) external {
-        require(msg.sender == governance, "!governance");
-        breaker = _breaker;
-    }
-
     /* Default rewards contract */
-    IERC20 public token = IERC20(0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8);
+    IERC20 public token;
 
     uint256 public constant DURATION = 7 days;
 
@@ -104,20 +85,26 @@ IRewardDistributionRecipient
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
+    /* number of proposals */
     uint public proposalCount;
     uint public period = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
     uint public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
     uint public minimum = 1e18;
     uint public quorum = 2000;
-    bool public config = true;
+    bool public configPending = true;
     uint public totalVotes;
 
-    address public governance;
+    address public governor;
+
+    /* Fees breaker, to protect withdraws if anything ever goes wrong */
+    bool public breaker = false;
 
     /* Modifications for proposals */
     mapping(address => uint) public voteLock; // period that your sake it locked to keep it for voting
     mapping(uint => Proposal) public proposals;
+    /* votes of an address */
     mapping(address => uint) public votes;
+    /* is address voter? */
     mapping(address => bool) public voters;
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -132,48 +119,87 @@ IRewardDistributionRecipient
         _;
     }
 
-    function setGovernance(address _governance)
+    modifier onlyGovernor() {
+        require(msg.sender == governor, "!governor");
+        _;
+    }
+
+    modifier onlyVoter() {
+        require(voters[msg.sender] == true, "!voter");
+        _;
+    }
+
+    constructor(
+        address _governorAddress,
+        address _tokenAddress,
+        address _voteAddress
+    )
     public
+    LPTokenWrapper(_voteAddress)
     {
-        require(msg.sender == governance, "!governance");
-        governance = _governance;
+        governor = _governorAddress;
+        token = IERC20(_tokenAddress);
+    }
+
+    /* Fee collection for any other token */
+
+    function seize(IERC20 _token, uint amount)
+    external
+    onlyGovernor
+    {
+        require(_token != token, "reward");
+        require(_token != vote, "vote");
+        _token.safeTransfer(governor, amount);
+    }
+
+    function setBreaker(bool _breaker)
+    external
+    onlyGovernor
+    {
+        breaker = _breaker;
+    }
+
+    function setGovernor(address _governor)
+    public
+    onlyGovernor
+    {
+        governor = _governor;
     }
 
     function setQuorum(uint _quorum)
     public
+    onlyGovernor
     {
-        require(msg.sender == governance, "!governance");
         quorum = _quorum;
     }
 
     function setMinimum(uint _minimum)
     public
+    onlyGovernor
     {
-        require(msg.sender == governance, "!governance");
         minimum = _minimum;
     }
 
     function setPeriod(uint _period)
     public
+    onlyGovernor
     {
-        require(msg.sender == governance, "!governance");
         period = _period;
     }
 
     function setLock(uint _lock)
     public
+    onlyGovernor
     {
-        require(msg.sender == governance, "!governance");
         lock = _lock;
     }
 
-    function initialize(uint id)
+    function initialize(uint _proposalCount)
     public
     {
-        require(config == true, "!config");
-        config = false;
-        proposalCount = id;
-        governance = 0xc487E91aac75D048EeACA7360E479Ae7cCEa0b86;
+        require(configPending == true, "!configPending");
+        configPending = false;
+        proposalCount = _proposalCount;
     }
 
     function propose(address executor, string memory hash)
@@ -247,20 +273,10 @@ IRewardDistributionRecipient
         return votes[voter];
     }
 
-    function register()
-    public
-    {
-        require(voters[msg.sender] == false, "voter");
-        voters[msg.sender] = true;
-        votes[msg.sender] = balanceOf(msg.sender);
-        totalVotes = totalVotes.add(votes[msg.sender]);
-        emit RegisterVoter(msg.sender, votes[msg.sender], totalVotes);
-    }
-
     function revoke()
     public
+    onlyVoter
     {
-        require(voters[msg.sender] == true, "!voter");
         voters[msg.sender] = false;
         if (totalVotes < votes[msg.sender]) {
             //edge case, should be impossible, but this is defi
@@ -277,6 +293,8 @@ IRewardDistributionRecipient
     {
         require(proposals[id].start < block.number, "<start");
         require(proposals[id].end > block.number, ">end");
+
+        voters[msg.sender] = true;
 
         uint _against = proposals[id].againstVotes[msg.sender];
         if (_against > 0) {
@@ -302,6 +320,8 @@ IRewardDistributionRecipient
     {
         require(proposals[id].start < block.number, "<start");
         require(proposals[id].end > block.number, ">end");
+
+        voters[msg.sender] = true;
 
         uint _for = proposals[id].forVotes[msg.sender];
         if (_for > 0) {
@@ -364,10 +384,10 @@ IRewardDistributionRecipient
     updateReward(msg.sender)
     {
         require(amount > 0, "Cannot stake 0");
-        if (voters[msg.sender] == true) {
-            votes[msg.sender] = votes[msg.sender].add(amount);
-            totalVotes = totalVotes.add(amount);
-        }
+
+        votes[msg.sender] = votes[msg.sender].add(amount);
+        totalVotes = totalVotes.add(amount);
+
         super.stake(amount);
         emit Staked(msg.sender, amount);
     }
@@ -378,13 +398,14 @@ IRewardDistributionRecipient
     updateReward(msg.sender)
     {
         require(amount > 0, "Cannot withdraw 0");
-        if (voters[msg.sender] == true) {
-            votes[msg.sender] = votes[msg.sender].sub(amount);
-            totalVotes = totalVotes.sub(amount);
-        }
+
+        votes[msg.sender] = votes[msg.sender].sub(amount);
+        totalVotes = totalVotes.sub(amount);
+
         if (breaker == false) {
             require(voteLock[msg.sender] < block.number, "!locked");
         }
+
         super.withdraw(amount);
         emit Withdrawn(msg.sender, amount);
     }

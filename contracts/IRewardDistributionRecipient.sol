@@ -4,7 +4,7 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 abstract contract IRewardDistributionRecipient is Ownable {
-    address private rewardDistribution;
+    address public rewardDistribution;
 
     function notifyRewardAmount(uint256 reward) external virtual;
 
@@ -16,7 +16,9 @@ abstract contract IRewardDistributionRecipient is Ownable {
         _;
     }
 
-    function setRewardDistribution(address _rewardDistribution)
+    function setRewardDistribution(
+        address _rewardDistribution
+    )
     external
     onlyOwner
     {

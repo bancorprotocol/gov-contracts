@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
@@ -9,11 +8,18 @@ contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public vote = IERC20(0xa1d0E215a23d7030842FC67cE582a6aFa3CCaB83);
+    //
+    IERC20 public vote;
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
 
+    constructor(address _voteAddress)
+    public
+    {
+        vote = IERC20(_voteAddress);
+    }
+    
     function totalSupply()
     public view
     returns (uint256)
