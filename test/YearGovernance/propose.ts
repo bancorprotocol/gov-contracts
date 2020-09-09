@@ -41,12 +41,18 @@ contract("YearnGovernance", async (accounts) => {
         (amt).toString(),
         {from: executor}
       )
+
+      const proposalId = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
+      const proposalCount = (await instance.proposalCount.call()).toNumber()
+
       // propose
-      await instance.propose(
-        accounts[9],
-        accounts[9],
+      const {logs} = await instance.propose(
+        proposalId,
+        web3.utils.keccak256(proposalId),
         {from: executor}
       )
+
+      assert.strictEqual(logs[0].args.id.toNumber(), proposalCount + 1)
     })
   })
 })

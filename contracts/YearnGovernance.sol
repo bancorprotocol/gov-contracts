@@ -85,8 +85,10 @@ IRewardDistributionRecipient
     uint256 public rewardRate = 0;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
+
     /* number of proposals */
     uint public proposalCount;
+    /* period that a proposal is open for voting */
     uint public period = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
     uint public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
     uint public minimum = 1e18;
@@ -206,7 +208,7 @@ IRewardDistributionRecipient
     public
     {
         require(votesOf(msg.sender) > minimum, "<minimum");
-        proposals[proposalCount++] = Proposal({
+        proposals[++proposalCount] = Proposal({
         id : proposalCount,
         proposer : msg.sender,
         totalForVotes : 0,
@@ -291,6 +293,7 @@ IRewardDistributionRecipient
     function voteFor(uint id)
     public
     {
+        require(proposals[id].start > 0, "no such proposal");
         require(proposals[id].start < block.number, "<start");
         require(proposals[id].end > block.number, ">end");
 
@@ -318,6 +321,7 @@ IRewardDistributionRecipient
     function voteAgainst(uint id)
     public
     {
+        require(proposals[id].start > 0, "no such proposal");
         require(proposals[id].start < block.number, "<start");
         require(proposals[id].end > block.number, ">end");
 
