@@ -1,4 +1,6 @@
 import {propose, stake} from "./utils";
+// @ts-ignore
+import *  as truffleAssert from "truffle-assertions"
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
@@ -53,13 +55,14 @@ contract("BancorGovernance", async (accounts) => {
     })
 
     it("should not be able to revoke if not voted", async () => {
-      try {
-        await governance.revoke(
+      await truffleAssert.fails(
+        // revoke
+        governance.revoke(
           {from: someone}
-        )
-        assert.fail('able to revoke if not staked!')
-      } catch {
-      }
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "!voter"
+      );
     })
   })
 })

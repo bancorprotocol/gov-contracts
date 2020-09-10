@@ -1,4 +1,6 @@
 import {propose, stake} from "./utils";
+// @ts-ignore
+import *  as truffleAssert from "truffle-assertions"
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
@@ -44,6 +46,18 @@ contract("BancorGovernance", async (accounts) => {
       await governance.voteFor(
         proposalId,
         {from: executor}
+      )
+    })
+
+    it("should fail to vote for an unknown proposal", async () => {
+      await truffleAssert.fails(
+        // vote against
+        governance.voteFor(
+          "0x1337",
+          {from: executor}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "no such proposal"
       )
     })
   })

@@ -1,4 +1,6 @@
 import {stake} from "./utils";
+// @ts-ignore
+import *  as truffleAssert from "truffle-assertions"
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
@@ -44,5 +46,16 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
+    it("should not be able to stake 0", async () => {
+      await truffleAssert.fails(
+        // stake
+        governance.withdraw(
+          (0).toString(),
+          {from: executor}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "Cannot withdraw 0"
+      )
+    })
   })
 })
