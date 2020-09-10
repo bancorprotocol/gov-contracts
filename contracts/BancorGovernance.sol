@@ -192,7 +192,10 @@ IRewardDistributionRecipient
         proposalCount = _proposalCount;
     }
 
-    function propose(address executor, string memory hash)
+    function propose(
+        address executor,
+        string memory hash
+    )
     public
     {
         require(votesOf(msg.sender) > minimum, "<minimum");
@@ -421,7 +424,9 @@ IRewardDistributionRecipient
         if (breaker == false) {
             require(voteLock[msg.sender] > block.number, "!voted");
         }
+
         uint256 reward = earned(msg.sender);
+
         if (reward > 0) {
             rewards[msg.sender] = 0;
             rewardToken.safeTransfer(msg.sender, reward);

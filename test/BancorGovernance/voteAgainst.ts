@@ -12,11 +12,10 @@ contract("BancorGovernance", async (accounts) => {
   const executor = accounts[2]
 
   before(async () => {
-    token = await TestToken.new()
     vote = await TestToken.new()
+    token = await TestToken.new()
 
     // get the executor some tokens
-    await token.mint(executor, (100 * decimals).toString())
     await vote.mint(executor, (100 * decimals).toString())
   })
 

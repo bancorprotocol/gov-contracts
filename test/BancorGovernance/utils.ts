@@ -23,15 +23,15 @@ export const stake = async (
 export const propose = async (
   governance,
   vote,
-  executor
+  executor,
+  contractToExecute = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
 ): Promise<string> => {
-  const proposalId = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
   const proposalCount = (await governance.proposalCount.call()).toNumber()
 
   // propose
   const {logs} = await governance.propose(
-    proposalId,
-    web3.utils.keccak256(proposalId),
+    contractToExecute,
+    web3.utils.keccak256(contractToExecute),
     {from: executor}
   )
 

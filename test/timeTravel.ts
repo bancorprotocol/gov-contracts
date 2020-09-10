@@ -18,7 +18,6 @@ const m = async (web3, time) => {
 
 export const mine = async (web3, times) => {
   for (let i = 0; i < times; i++) {
-    console.log(i)
     await m(web3, Date.now())
   }
 }

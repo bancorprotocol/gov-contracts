@@ -6,7 +6,11 @@ import "@bancor/contracts-solidity/solidity/contracts/utility/Owned.sol";
 abstract contract IRewardDistributionRecipient is Owned {
     address public rewardDistribution;
 
-    function notifyRewardAmount(uint256 reward) external virtual;
+    function notifyRewardAmount(
+        uint256 reward
+    )
+    external
+    virtual;
 
     modifier onlyRewardDistribution() {
         require(

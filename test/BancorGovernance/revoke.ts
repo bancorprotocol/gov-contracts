@@ -17,7 +17,6 @@ contract("BancorGovernance", async (accounts) => {
     vote = await TestToken.new()
 
     // get the executor some tokens
-    await token.mint(executor, (100 * decimals).toString())
     await vote.mint(executor, (100 * decimals).toString())
   })
 
