@@ -26,22 +26,21 @@ contract("YearnGovernance", async (accounts) => {
     );
   })
 
-  describe("#stake()", async () => {
-    it("should be able to stake 2", async () => {
+  const stake = async (amt: number) => {
+    // allow governance to spend vote tokens
+    await vote.approve(instance.address, amt.toString(), {from: executor})
+    // stake
+    await instance.stake(amt.toString(), {from: executor})
+
+  }
+  describe("#withdraw()", async () => {
+    it("should be able to withdraw", async () => {
       const amt = 2 * decimals
-      // allow governance to spend vote tokens
-      await vote.approve(instance.address, amt.toString(), {from: executor})
-      // stake
-      await instance.stake(amt.toString(), {from: executor})
+
+      await stake(amt)
+
+      await instance.withdraw(amt.toString(), {from: executor})
     })
 
-    it("should not be able to stake 0", async () => {
-      try {
-        // stake
-        await instance.stake((0).toString(), {from: executor})
-        assert.fail('staking with 0 was possible')
-      } catch {
-      }
-    })
   })
 })

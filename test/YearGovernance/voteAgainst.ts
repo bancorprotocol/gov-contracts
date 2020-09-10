@@ -49,19 +49,16 @@ contract("YearnGovernance", async (accounts) => {
       {from: executor}
     )
 
-    assert.strictEqual(
-      logs[0].args.id.toString(),
-      (proposalCount + 1).toString()
-    )
+    assert.strictEqual(logs[0].args.id.toString(), (proposalCount + 1).toString())
 
     return logs[0].args.id.toString()
   }
 
-  describe("#voteFor()", async () => {
-    it("should vote for a proposal", async () => {
+  describe("#voteAgainst()", async () => {
+    it("should vote against a proposal", async () => {
       const proposalId = await propose()
 
-      await instance.voteFor(
+      await instance.voteAgainst(
         proposalId,
         {from: executor}
       )

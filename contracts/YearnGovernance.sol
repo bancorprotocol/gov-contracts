@@ -346,6 +346,7 @@ IRewardDistributionRecipient
         if (totalSupply() == 0) {
             return rewardPerTokenStored;
         }
+
         return
         rewardPerTokenStored.add(
             lastTimeRewardApplicable()
