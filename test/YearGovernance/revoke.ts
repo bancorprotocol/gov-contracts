@@ -1,4 +1,4 @@
-import {stake} from "./utils";
+import {propose, stake} from "./utils";
 
 contract("YearnGovernance", async (accounts) => {
   const YearnGovernance = artifacts.require("YearnGovernance");
@@ -10,6 +10,7 @@ contract("YearnGovernance", async (accounts) => {
   let vote: any;
 
   const executor = accounts[2]
+  const someone = accounts[3]
 
   before(async () => {
     token = await TestToken.new()
@@ -27,8 +28,8 @@ contract("YearnGovernance", async (accounts) => {
     );
   })
 
-  describe("#propose()", async () => {
-    it("should propose", async () => {
+  describe("#revoke()", async () => {
+    it("should be able to revoke votes", async () => {
       // stake
       await stake(
         governance,
@@ -36,21 +37,31 @@ contract("YearnGovernance", async (accounts) => {
         executor,
         2
       )
-
-      const proposalId = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
-      const proposalCount = (await governance.proposalCount.call()).toNumber()
-
       // propose
-      const {logs} = await governance.propose(
+      const proposalId = await propose(
+        governance,
+        vote,
+        executor
+      )
+      // vote for
+      await governance.voteFor(
         proposalId,
-        web3.utils.keccak256(proposalId),
         {from: executor}
       )
-
-      assert.strictEqual(
-        logs[0].args.id.toNumber(),
-        proposalCount + 1
+      // revoke
+      await governance.revoke(
+        {from: executor}
       )
+    })
+
+    it("should not be able to revoke if not voted", async () => {
+      try {
+        await governance.revoke(
+          {from: someone}
+        )
+        assert.fail('able to revoke if not staked!')
+      } catch {
+      }
     })
   })
 })

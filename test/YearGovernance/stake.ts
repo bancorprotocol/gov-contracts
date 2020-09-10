@@ -1,10 +1,12 @@
+import {stake} from "./utils";
+
 contract("YearnGovernance", async (accounts) => {
   const YearnGovernance = artifacts.require("YearnGovernance");
   const TestToken = artifacts.require("TestToken");
 
   const decimals = 1e18
 
-  let instance: any;
+  let governance: any;
   let token: any;
   let vote: any;
 
@@ -20,7 +22,7 @@ contract("YearnGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    instance = await YearnGovernance.new(
+    governance = await YearnGovernance.new(
       token.address,
       vote.address
     );
@@ -28,17 +30,18 @@ contract("YearnGovernance", async (accounts) => {
 
   describe("#stake()", async () => {
     it("should be able to stake 2", async () => {
-      const amt = 2 * decimals
-      // allow governance to spend vote tokens
-      await vote.approve(instance.address, amt.toString(), {from: executor})
-      // stake
-      await instance.stake(amt.toString(), {from: executor})
+      await stake(
+        governance,
+        vote,
+        executor,
+        2
+      )
     })
 
     it("should not be able to stake 0", async () => {
       try {
         // stake
-        await instance.stake((0).toString(), {from: executor})
+        await governance.stake((0).toString(), {from: executor})
         assert.fail('staking with 0 was possible')
       } catch {
       }

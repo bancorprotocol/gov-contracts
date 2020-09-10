@@ -1,14 +1,18 @@
+import {mine} from "../timeTravel";
 import {propose, stake} from "./utils";
 
 contract("YearnGovernance", async (accounts) => {
   const YearnGovernance = artifacts.require("YearnGovernance");
   const TestToken = artifacts.require("TestToken");
+
   const decimals = 1e18
+  const lock = 5
 
   let governance: any;
   let token: any;
   let vote: any;
 
+  const owner = accounts[0]
   const executor = accounts[2]
 
   before(async () => {
@@ -16,8 +20,14 @@ contract("YearnGovernance", async (accounts) => {
     vote = await TestToken.new()
 
     // get the executor some tokens
-    await token.mint(executor, (100 * decimals).toString())
-    await vote.mint(executor, (100 * decimals).toString())
+    await token.mint(
+      executor,
+      (100 * decimals).toString()
+    )
+    await vote.mint(
+      executor,
+      (100 * decimals).toString()
+    )
   })
 
   beforeEach(async () => {
@@ -25,10 +35,16 @@ contract("YearnGovernance", async (accounts) => {
       token.address,
       vote.address
     );
+
+    // lower lock to 5 blocks so we have to mine only a few blocks ahead
+    await governance.setLock(
+      lock,
+      {from: owner}
+    )
   })
 
-  describe("#voteFor()", async () => {
-    it("should vote for a proposal", async () => {
+  describe("#exit()", async () => {
+    xit("should be able to exit", async () => {
       // stake
       await stake(
         governance,
@@ -42,9 +58,18 @@ contract("YearnGovernance", async (accounts) => {
         vote,
         executor
       )
-      // vote for
+      // vote
       await governance.voteFor(
         proposalId,
+        {from: executor}
+      )
+      // mine some blocks to get out of the lock
+      await mine(
+        web3,
+        lock + 1
+      )
+      // exit
+      await governance.exit(
         {from: executor}
       )
     })

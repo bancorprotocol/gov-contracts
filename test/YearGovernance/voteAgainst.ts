@@ -1,9 +1,11 @@
+import {propose, stake} from "./utils";
+
 contract("YearnGovernance", async (accounts) => {
   const YearnGovernance = artifacts.require("YearnGovernance");
   const TestToken = artifacts.require("TestToken");
   const decimals = 1e18
 
-  let instance: any;
+  let governance: any;
   let token: any;
   let vote: any;
 
@@ -19,46 +21,29 @@ contract("YearnGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    instance = await YearnGovernance.new(
+    governance = await YearnGovernance.new(
       token.address,
       vote.address
     );
   })
 
-  const propose = async (): Promise<string> => {
-    const amt = 2 * decimals
-    // allow governance spend vote tokens
-    await vote.approve(
-      instance.address,
-      amt.toString(),
-      {from: executor}
-    )
-    // stake
-    await instance.stake(
-      (amt).toString(),
-      {from: executor}
-    )
-
-    const proposalId = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
-    const proposalCount = (await instance.proposalCount.call()).toNumber()
-
-    // propose
-    const {logs} = await instance.propose(
-      proposalId,
-      web3.utils.keccak256(proposalId),
-      {from: executor}
-    )
-
-    assert.strictEqual(logs[0].args.id.toString(), (proposalCount + 1).toString())
-
-    return logs[0].args.id.toString()
-  }
-
   describe("#voteAgainst()", async () => {
     it("should vote against a proposal", async () => {
-      const proposalId = await propose()
-
-      await instance.voteAgainst(
+      // stake
+      await stake(
+        governance,
+        vote,
+        executor,
+        2
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        vote,
+        executor
+      )
+      // vote against
+      await governance.voteAgainst(
         proposalId,
         {from: executor}
       )
