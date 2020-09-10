@@ -40,8 +40,8 @@ import "@bancor/contracts-solidity/solidity/contracts/utility/Owned.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "./IRewardDistributionRecipient.sol";
-import "./IExecutor.sol";
+import "./interfaces/IRewardDistributionRecipient.sol";
+import "./interfaces/IExecutor.sol";
 
 contract YearnGovernance is
 Owned,
