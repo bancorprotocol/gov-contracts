@@ -14,7 +14,8 @@ jobs:
           node-version: '10.x'
       - name: Pre-install
         run: |
-          yarn
+          yarn install --check-files --cache-folder .ycache
+          rm -rf .ycache
           npx ganache-cli@~6.9.1 > ganache-cli.log &
       - name: Run tests
         run: |
