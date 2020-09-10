@@ -39,19 +39,17 @@ pragma solidity 0.6.12;
 import "@bancor/contracts-solidity/solidity/contracts/utility/Owned.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "./CurveRewards.sol";
 import "./IRewardDistributionRecipient.sol";
 import "./IExecutor.sol";
 
 contract YearnGovernance is
 Owned,
-LPTokenWrapper,
 IRewardDistributionRecipient
 {
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+
     event NewProposal(uint id, address creator, uint start, uint duration, address executor);
     event Vote(uint indexed id, address indexed voter, bool vote, uint weight);
     event ProposalFinished(uint indexed id, uint _for, uint _against, bool quorumReached);
@@ -79,7 +77,11 @@ IRewardDistributionRecipient
     }
 
     /* Default rewards contract */
-    IERC20 public token;
+    IERC20 public rewardToken;
+    IERC20 public voteToken;
+
+    uint256 private _totalSupply;
+    mapping(address => uint256) private _balances;
 
     uint256 public constant DURATION = 7 days;
 
@@ -131,9 +133,9 @@ IRewardDistributionRecipient
         address _voteAddress
     )
     public
-    LPTokenWrapper(_voteAddress)
     {
-        token = IERC20(_tokenAddress);
+        rewardToken = IERC20(_tokenAddress);
+        voteToken = IERC20(_voteAddress);
     }
 
     /* Fee collection for any other token */
@@ -142,8 +144,8 @@ IRewardDistributionRecipient
     external
     ownerOnly
     {
-        require(_token != token, "reward");
-        require(_token != vote, "vote");
+        require(_token != rewardToken, "reward");
+        require(_token != voteToken, "vote");
         _token.safeTransfer(owner, amount);
     }
 
@@ -371,7 +373,6 @@ IRewardDistributionRecipient
     // stake visibility is public as overriding LPTokenWrapper's stake() function
     function stake(uint256 amount)
     public
-    override
     updateReward(msg.sender)
     {
         require(amount > 0, "Cannot stake 0");
@@ -379,13 +380,15 @@ IRewardDistributionRecipient
         votes[msg.sender] = votes[msg.sender].add(amount);
         totalVotes = totalVotes.add(amount);
 
-        super.stake(amount);
+        _totalSupply = _totalSupply.add(amount);
+        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        voteToken.safeTransferFrom(msg.sender, address(this), amount);
+
         emit Staked(msg.sender, amount);
     }
 
     function withdraw(uint256 amount)
     public
-    override
     updateReward(msg.sender)
     {
         require(amount > 0, "Cannot withdraw 0");
@@ -397,7 +400,10 @@ IRewardDistributionRecipient
             require(voteLock[msg.sender] < block.number, "!locked");
         }
 
-        super.withdraw(amount);
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        voteToken.safeTransfer(msg.sender, amount);
+
         emit Withdrawn(msg.sender, amount);
     }
 
@@ -418,7 +424,7 @@ IRewardDistributionRecipient
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            token.safeTransfer(msg.sender, reward);
+            rewardToken.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
     }
@@ -429,7 +435,7 @@ IRewardDistributionRecipient
     onlyRewardDistribution
     updateReward(address(0))
     {
-        IERC20(token).safeTransferFrom(msg.sender, address(this), reward);
+        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), reward);
         if (block.timestamp >= periodFinish) {
             rewardRate = reward.div(DURATION);
         } else {
@@ -440,5 +446,19 @@ IRewardDistributionRecipient
         lastUpdateTime = block.timestamp;
         periodFinish = block.timestamp.add(DURATION);
         emit RewardAdded(reward);
+    }
+
+    function totalSupply()
+    public view
+    returns (uint256)
+    {
+        return _totalSupply;
+    }
+
+    function balanceOf(address account)
+    public view
+    returns (uint256)
+    {
+        return _balances[account];
     }
 }
