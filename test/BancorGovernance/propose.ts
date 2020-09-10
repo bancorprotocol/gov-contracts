@@ -6,23 +6,23 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let token: any;
-  let vote: any;
+  let rewardToken: any;
+  let voteToken: any;
 
   const executor = accounts[2]
 
   before(async () => {
-    token = await TestToken.new()
-    vote = await TestToken.new()
+    rewardToken = await TestToken.new()
+    voteToken = await TestToken.new()
 
     // get the executor some tokens
-    await vote.mint(executor, (100 * decimals).toString())
+    await voteToken.mint(executor, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      token.address,
-      vote.address
+      rewardToken.address,
+      voteToken.address
     );
   })
 
@@ -31,18 +31,18 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        vote,
+        voteToken,
         executor,
         2
       )
 
-      const proposalId = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
+      const contractToExecute = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
       const proposalCount = (await governance.proposalCount.call()).toNumber()
 
       // propose
       const {logs} = await governance.propose(
-        proposalId,
-        web3.utils.keccak256(proposalId),
+        contractToExecute,
+        web3.utils.keccak256(contractToExecute),
         {from: executor}
       )
 

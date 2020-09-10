@@ -4,6 +4,7 @@
     "module": "CommonJS",
     "moduleResolution": "Node",
     "skipLibCheck": true,
+    "strict": true,
     "lib": [
       "ES2017"
     ],

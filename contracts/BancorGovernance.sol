@@ -129,13 +129,13 @@ IRewardDistributionRecipient
     }
 
     constructor(
-        address _tokenAddress,
-        address _voteAddress
+        address _rewardTokenAddress,
+        address _voteTokenAddress
     )
     public
     {
-        rewardToken = IERC20(_tokenAddress);
-        voteToken = IERC20(_voteAddress);
+        rewardToken = IERC20(_rewardTokenAddress);
+        voteToken = IERC20(_voteTokenAddress);
     }
 
     /* Fee collection for any other token */

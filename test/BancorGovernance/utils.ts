@@ -1,10 +1,10 @@
 const decimals = 1e18
 
 export const stake = async (
-  governance,
-  vote,
-  executor,
-  amount
+  governance: any,
+  vote: any,
+  executor: string,
+  amount: number
 ) => {
   const amt = amount * decimals
   // allow governance spend vote tokens
@@ -21,10 +21,9 @@ export const stake = async (
 }
 
 export const propose = async (
-  governance,
-  vote,
-  executor,
-  contractToExecute = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
+  governance: any,
+  executor: string,
+  contractToExecute: string = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
 ): Promise<string> => {
   const proposalCount = (await governance.proposalCount.call()).toNumber()
 
@@ -35,7 +34,10 @@ export const propose = async (
     {from: executor}
   )
 
-  assert.strictEqual(logs[0].args.id.toString(), (proposalCount + 1).toString())
+  assert.strictEqual(
+    logs[0].args.id.toString(),
+    (proposalCount + 1).toString()
+  )
 
   return logs[0].args.id.toString()
 }

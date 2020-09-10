@@ -8,18 +8,18 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let token: any;
-  let vote: any;
+  let rewardToken: any;
+  let voteToken: any;
 
   const owner = accounts[0]
   const executor = accounts[2]
 
   before(async () => {
-    token = await TestToken.new()
-    vote = await TestToken.new()
+    rewardToken = await TestToken.new()
+    voteToken = await TestToken.new()
 
     // get the executor some tokens
-    await vote.mint(
+    await voteToken.mint(
       executor,
       (100 * decimals).toString()
     )
@@ -27,8 +27,8 @@ contract("BancorGovernance", async (accounts) => {
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      token.address,
-      vote.address
+      rewardToken.address,
+      voteToken.address
     );
   })
 
@@ -37,14 +37,13 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        vote,
+        voteToken,
         executor,
         2
       )
       // propose
       const proposalId = await propose(
         governance,
-        vote,
         executor
       )
       // vote
