@@ -23,6 +23,10 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
+"@bancor/contracts-solidity@https://github.com/bancorprotocol/contracts-solidity.git#v0.6.15":
+  version "0.6.15"
+  resolved "https://github.com/bancorprotocol/contracts-solidity.git#5ecb90293b36d79cc4ed23dd1a057b8f5346cf1e"
+
 "@ethersproject/abi@5.0.0-beta.153":
   version "5.0.0-beta.153"
   resolved "https://registry.yarnpkg.com/@ethersproject/abi/-/abi-5.0.0-beta.153.tgz#43a37172b33794e4562999f6e2d555b7599a8eee"

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@bancor/contracts-solidity/solidity/contracts/utility/Owned.sol";
 
-abstract contract IRewardDistributionRecipient is Ownable {
+abstract contract IRewardDistributionRecipient is Owned {
     address public rewardDistribution;
 
     function notifyRewardAmount(uint256 reward) external virtual;
 
     modifier onlyRewardDistribution() {
         require(
-            _msgSender() == rewardDistribution,
+            msg.sender == rewardDistribution,
             "!rewardDistribution"
         );
         _;
@@ -20,7 +20,7 @@ abstract contract IRewardDistributionRecipient is Ownable {
         address _rewardDistribution
     )
     external
-    onlyOwner
+    ownerOnly
     {
         rewardDistribution = _rewardDistribution;
     }

@@ -36,6 +36,7 @@
 */
 pragma solidity 0.6.12;
 
+import "@bancor/contracts-solidity/solidity/contracts/utility/Owned.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
@@ -47,6 +48,7 @@ import "./IRewardDistributionRecipient.sol";
 import "./IExecutor.sol";
 
 contract YearnGovernance is
+Owned,
 LPTokenWrapper,
 IRewardDistributionRecipient
 {
@@ -96,8 +98,6 @@ IRewardDistributionRecipient
     bool public configPending = true;
     uint public totalVotes;
 
-    address public governor;
-
     /* Fees breaker, to protect withdraws if anything ever goes wrong */
     bool public breaker = false;
 
@@ -121,25 +121,18 @@ IRewardDistributionRecipient
         _;
     }
 
-    modifier onlyGovernor() {
-        require(msg.sender == governor, "!governor");
-        _;
-    }
-
     modifier onlyVoter() {
         require(voters[msg.sender] == true, "!voter");
         _;
     }
 
     constructor(
-        address _governorAddress,
         address _tokenAddress,
         address _voteAddress
     )
     public
     LPTokenWrapper(_voteAddress)
     {
-        governor = _governorAddress;
         token = IERC20(_tokenAddress);
     }
 
@@ -147,51 +140,44 @@ IRewardDistributionRecipient
 
     function seize(IERC20 _token, uint amount)
     external
-    onlyGovernor
+    ownerOnly
     {
         require(_token != token, "reward");
         require(_token != vote, "vote");
-        _token.safeTransfer(governor, amount);
+        _token.safeTransfer(owner, amount);
     }
 
     function setBreaker(bool _breaker)
     external
-    onlyGovernor
+    ownerOnly
     {
         breaker = _breaker;
     }
 
-    function setGovernor(address _governor)
-    public
-    onlyGovernor
-    {
-        governor = _governor;
-    }
-
     function setQuorum(uint _quorum)
     public
-    onlyGovernor
+    ownerOnly
     {
         quorum = _quorum;
     }
 
     function setMinimum(uint _minimum)
     public
-    onlyGovernor
+    ownerOnly
     {
         minimum = _minimum;
     }
 
     function setPeriod(uint _period)
     public
-    onlyGovernor
+    ownerOnly
     {
         period = _period;
     }
 
     function setLock(uint _lock)
     public
-    onlyGovernor
+    ownerOnly
     {
         lock = _lock;
     }

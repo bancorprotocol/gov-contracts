@@ -7,7 +7,6 @@ contract("YearnGovernance", async (accounts) => {
   let token: any;
   let vote: any;
 
-  const governor = accounts[0]
   const executor = accounts[2]
 
   before(async () => {
@@ -21,7 +20,6 @@ contract("YearnGovernance", async (accounts) => {
 
   beforeEach(async () => {
     instance = await YearnGovernance.new(
-      governor,
       token.address,
       vote.address
     );
@@ -59,8 +57,6 @@ contract("YearnGovernance", async (accounts) => {
   describe("#voteFor()", async () => {
     it("should vote for a proposal", async () => {
       const proposalId = await propose()
-
-      console.log(proposalId)
 
       await instance.voteFor(
         proposalId,
