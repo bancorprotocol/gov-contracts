@@ -36,9 +36,9 @@ contract("YearnGovernance", async (accounts) => {
   describe("#withdraw()", async () => {
     it("should be able to withdraw", async () => {
       const amt = 2 * decimals
-
+      // stake
       await stake(amt)
-
+      // withdraw
       await instance.withdraw(amt.toString(), {from: executor})
     })
 
