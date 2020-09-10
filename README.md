@@ -7,3 +7,4 @@ Bancor Governance contracts
 - Unit tests written in typescript
 - Solhint for linting contracts
 - snyk for resolving dependency issues
+- Migrated reward token into governance contract

@@ -10,6 +10,9 @@
     "url": "https://github.com/bancorprotocol/gov-contracts/issues"
   },
   "author": "Yudi Levi",
+  "contributors": [
+    "Sebastian Gerske - Keyko GmbH"
+  ],
   "license": "MIT",
   "engines": {
     "npm": "^3.0.0"

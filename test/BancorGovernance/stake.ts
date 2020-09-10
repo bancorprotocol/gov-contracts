@@ -1,7 +1,7 @@
 import {stake} from "./utils";
 
-contract("YearnGovernance", async (accounts) => {
-  const YearnGovernance = artifacts.require("YearnGovernance");
+contract("BancorGovernance", async (accounts) => {
+  const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");
 
   const decimals = 1e18
@@ -22,7 +22,7 @@ contract("YearnGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    governance = await YearnGovernance.new(
+    governance = await BancorGovernance.new(
       token.address,
       vote.address
     );

@@ -43,7 +43,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./interfaces/IRewardDistributionRecipient.sol";
 import "./interfaces/IExecutor.sol";
 
-contract YearnGovernance is
+contract BancorGovernance is
 Owned,
 IRewardDistributionRecipient
 {

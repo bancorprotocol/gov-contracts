@@ -1,9 +1,8 @@
-import {stake} from "./utils";
+import {propose, stake} from "./utils";
 
-contract("YearnGovernance", async (accounts) => {
-  const YearnGovernance = artifacts.require("YearnGovernance");
+contract("BancorGovernance", async (accounts) => {
+  const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");
-
   const decimals = 1e18
 
   let governance: any;
@@ -22,28 +21,32 @@ contract("YearnGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    governance = await YearnGovernance.new(
+    governance = await BancorGovernance.new(
       token.address,
       vote.address
     );
   })
 
-  describe("#withdraw()", async () => {
-    it("should be able to withdraw", async () => {
-      const amount = 2
+  describe("#voteAgainst()", async () => {
+    it("should vote against a proposal", async () => {
       // stake
       await stake(
         governance,
         vote,
         executor,
-        amount
+        2
       )
-      // withdraw
-      await governance.withdraw(
-        (amount * decimals).toString(),
+      // propose
+      const proposalId = await propose(
+        governance,
+        vote,
+        executor
+      )
+      // vote against
+      await governance.voteAgainst(
+        proposalId,
         {from: executor}
       )
     })
-
   })
 })

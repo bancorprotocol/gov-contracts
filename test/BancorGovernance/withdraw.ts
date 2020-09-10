@@ -1,8 +1,9 @@
 import {stake} from "./utils";
 
-contract("YearnGovernance", async (accounts) => {
-  const YearnGovernance = artifacts.require("YearnGovernance");
+contract("BancorGovernance", async (accounts) => {
+  const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");
+
   const decimals = 1e18
 
   let governance: any;
@@ -21,36 +22,28 @@ contract("YearnGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    governance = await YearnGovernance.new(
+    governance = await BancorGovernance.new(
       token.address,
       vote.address
     );
   })
 
-  describe("#propose()", async () => {
-    it("should propose", async () => {
+  describe("#withdraw()", async () => {
+    it("should be able to withdraw", async () => {
+      const amount = 2
       // stake
       await stake(
         governance,
         vote,
         executor,
-        2
+        amount
       )
-
-      const proposalId = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
-      const proposalCount = (await governance.proposalCount.call()).toNumber()
-
-      // propose
-      const {logs} = await governance.propose(
-        proposalId,
-        web3.utils.keccak256(proposalId),
+      // withdraw
+      await governance.withdraw(
+        (amount * decimals).toString(),
         {from: executor}
       )
-
-      assert.strictEqual(
-        logs[0].args.id.toNumber(),
-        proposalCount + 1
-      )
     })
+
   })
 })
