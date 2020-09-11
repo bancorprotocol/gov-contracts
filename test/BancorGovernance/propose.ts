@@ -1,9 +1,12 @@
 import {stake} from "./utils";
+// @ts-ignore
+import *  as truffleAssert from "truffle-assertions"
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");
   const decimals = 1e18
+  const contractToExecute = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
 
   let governance: any;
   let rewardToken: any;
@@ -36,7 +39,6 @@ contract("BancorGovernance", async (accounts) => {
         2
       )
 
-      const contractToExecute = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
       const proposalCount = (await governance.proposalCount.call()).toNumber()
 
       // propose
@@ -49,6 +51,27 @@ contract("BancorGovernance", async (accounts) => {
       assert.strictEqual(
         logs[0].args.id.toNumber(),
         proposalCount + 1
+      )
+    })
+
+    it("should not be able to propose if not staked min amount", async () => {
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        executor,
+        1
+      )
+
+      await truffleAssert.fails(
+        // vote against
+        governance.propose(
+          contractToExecute,
+          web3.utils.keccak256(contractToExecute),
+          {from: executor}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "<voteMinimum"
       )
     })
   })
