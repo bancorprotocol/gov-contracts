@@ -22,7 +22,7 @@
     "migrate": "truffle migrate",
     "test": "truffle test",
     "coverage": "truffle run coverage",
-    "doc": "solidity-docgen --exclude ./contracts/test/ ./contracts/truffle/",
+    "doc": "solidity-docgen --exclude ./contracts/test/,./contracts/truffle/",
     "clean": "rm -rf ./build/ ./coverage/ coverage.json",
     "lint": "yarn lint:sol",
     "lint:sol": "solhint contracts/**/*.sol",
@@ -32,6 +32,7 @@
   "devDependencies": {
     "@bancor/contracts-solidity": "https://github.com/bancorprotocol/contracts-solidity.git#v0.6.15",
     "@openzeppelin/contracts": "^3.1.0",
+    "bignumber.js": "^9.0.0",
     "snyk": "^1.393.0",
     "solhint": "^3.2.0",
     "solidity-coverage": "^0.7.10",

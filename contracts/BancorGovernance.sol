@@ -97,7 +97,6 @@ IRewardDistributionRecipient
     uint public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
     uint public minimum = 1e18;
     uint public quorum = 2000;
-    bool public configPending = true;
     uint public totalVotes;
 
     /* Fees breaker, to protect withdraws if anything ever goes wrong */
@@ -107,7 +106,7 @@ IRewardDistributionRecipient
     mapping(address => uint) public voteLock; // period that your sake it locked to keep it for voting
     mapping(uint => Proposal) public proposals;
     /* votes of an address */
-    mapping(address => uint) public votes;
+    mapping(address => uint) private votes;
     /* is address voter? */
     mapping(address => bool) public voters;
     mapping(address => uint256) public userRewardPerTokenPaid;
@@ -138,98 +137,13 @@ IRewardDistributionRecipient
         voteToken = IERC20(_voteTokenAddress);
     }
 
-    /* Fee collection for any other token */
-
-    function seize(IERC20 _token, uint amount)
-    external
-    ownerOnly
-    {
-        require(_token != rewardToken, "reward");
-        require(_token != voteToken, "vote");
-        _token.safeTransfer(owner, amount);
-    }
-
-    function setBreaker(bool _breaker)
-    external
-    ownerOnly
-    {
-        breaker = _breaker;
-    }
-
-    function setQuorum(uint _quorum)
-    public
-    ownerOnly
-    {
-        quorum = _quorum;
-    }
-
-    function setMinimum(uint _minimum)
-    public
-    ownerOnly
-    {
-        minimum = _minimum;
-    }
-
-    function setPeriod(uint _period)
-    public
-    ownerOnly
-    {
-        period = _period;
-    }
-
-    function setLock(uint _lock)
-    public
-    ownerOnly
-    {
-        lock = _lock;
-    }
-
-    function initialize(uint _proposalCount)
-    public
-    {
-        require(configPending == true, "!configPending");
-        configPending = false;
-        proposalCount = _proposalCount;
-    }
-
-    function propose(
-        address executor,
-        string memory hash
-    )
-    public
-    {
-        require(votesOf(msg.sender) > minimum, "<minimum");
-        proposals[++proposalCount] = Proposal({
-        id : proposalCount,
-        proposer : msg.sender,
-        totalForVotes : 0,
-        totalAgainstVotes : 0,
-        start : block.number,
-        end : period.add(block.number),
-        executor : executor,
-        hash : hash,
-        totalVotesAvailable : totalVotes,
-        quorum : 0,
-        quorumRequired : quorum,
-        open : true
-        });
-
-        emit NewProposal(proposalCount, msg.sender, block.number, period, executor);
-        voteLock[msg.sender] = lock.add(block.number);
-    }
-
-    function execute(uint id)
-    public
-    {
-        (uint _for, uint _against, uint _quorum) = getStats(id);
-        require(proposals[id].quorumRequired < _quorum, "!quorum");
-        require(proposals[id].end < block.number, "!end");
-        if (proposals[id].open == true) {
-            tallyVotes(id);
-        }
-        IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
-    }
-
+    /**
+     * @dev Get the stats of a proposal
+     * @param id The id of the proposal to get the stats of
+     * @return _for
+     * @return _against
+     * @return _quorum
+     */
     function getStats(uint id)
     public view
     returns (uint _for, uint _against, uint _quorum)
@@ -244,97 +158,11 @@ IRewardDistributionRecipient
         _quorum = _total.mul(10000).div(proposals[id].totalVotesAvailable);
     }
 
-    function tallyVotes(uint id)
-    public
-    {
-        require(proposals[id].open == true, "!open");
-        require(proposals[id].end < block.number, "!end");
-
-        (uint _for, uint _against,) = getStats(id);
-        bool _quorum = false;
-        if (proposals[id].quorum >= proposals[id].quorumRequired) {
-            _quorum = true;
-        }
-        proposals[id].open = false;
-        emit ProposalFinished(id, _for, _against, _quorum);
-    }
-
     function votesOf(address voter)
     public view
     returns (uint)
     {
         return votes[voter];
-    }
-
-    function revoke()
-    public
-    onlyVoter
-    {
-        voters[msg.sender] = false;
-        if (totalVotes < votes[msg.sender]) {
-            //edge case, should be impossible, but this is defi
-            totalVotes = 0;
-        } else {
-            totalVotes = totalVotes.sub(votes[msg.sender]);
-        }
-        emit RevokeVoter(msg.sender, votes[msg.sender], totalVotes);
-        votes[msg.sender] = 0;
-    }
-
-    function voteFor(uint id)
-    public
-    {
-        require(proposals[id].start > 0, "no such proposal");
-        require(proposals[id].start < block.number, "<start");
-        require(proposals[id].end > block.number, ">end");
-
-        voters[msg.sender] = true;
-
-        uint _against = proposals[id].againstVotes[msg.sender];
-        if (_against > 0) {
-            proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.sub(_against);
-            proposals[id].againstVotes[msg.sender] = 0;
-        }
-
-        uint vote = votesOf(msg.sender).sub(proposals[id].forVotes[msg.sender]);
-        proposals[id].totalForVotes = proposals[id].totalForVotes.add(vote);
-        proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
-
-        proposals[id].totalVotesAvailable = totalVotes;
-        uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
-        proposals[id].quorum = _votes.mul(10000).div(totalVotes);
-
-        voteLock[msg.sender] = lock.add(block.number);
-
-        emit Vote(id, msg.sender, true, vote);
-    }
-
-    function voteAgainst(uint id)
-    public
-    {
-        require(proposals[id].start > 0, "no such proposal");
-        require(proposals[id].start < block.number, "<start");
-        require(proposals[id].end > block.number, ">end");
-
-        voters[msg.sender] = true;
-
-        uint _for = proposals[id].forVotes[msg.sender];
-        if (_for > 0) {
-            proposals[id].totalForVotes = proposals[id].totalForVotes.sub(_for);
-            proposals[id].forVotes[msg.sender] = 0;
-        }
-
-        uint vote = votesOf(msg.sender).sub(proposals[id].againstVotes[msg.sender]);
-        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(vote);
-        proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
-
-        proposals[id].totalVotesAvailable = totalVotes;
-        uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
-        proposals[id].quorum = _votes.mul(10000).div(totalVotes);
-
-        voteLock[msg.sender] = lock.add(block.number);
-
-        emit Vote(id, msg.sender, false, vote);
     }
 
     function lastTimeRewardApplicable()
@@ -373,65 +201,32 @@ IRewardDistributionRecipient
         .add(rewards[account]);
     }
 
-    // stake visibility is public as overriding LPTokenWrapper's stake() function
-    function stake(uint256 amount)
-    public
-    updateReward(msg.sender)
+    function totalSupply()
+    public view
+    returns (uint256)
     {
-        require(amount > 0, "Cannot stake 0");
-
-        votes[msg.sender] = votes[msg.sender].add(amount);
-        totalVotes = totalVotes.add(amount);
-
-        _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
-        voteToken.safeTransferFrom(msg.sender, address(this), amount);
-
-        emit Staked(msg.sender, amount);
+        return _totalSupply;
     }
 
-    function withdraw(uint256 amount)
-    public
-    updateReward(msg.sender)
+    function balanceOf(address account)
+    public view
+    returns (uint256)
     {
-        require(amount > 0, "Cannot withdraw 0");
-
-        votes[msg.sender] = votes[msg.sender].sub(amount);
-        totalVotes = totalVotes.sub(amount);
-
-        if (breaker == false) {
-            require(voteLock[msg.sender] < block.number, "!locked");
-        }
-
-        _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
-        voteToken.safeTransfer(msg.sender, amount);
-
-        emit Withdrawn(msg.sender, amount);
+        return _balances[account];
     }
 
-    function exit()
+    /**
+     * @dev Fee collection for any other token
+     * @param _token The token to seize
+     * @param amount The amount to seize
+     */
+    function seize(IERC20 _token, uint amount)
     external
+    ownerOnly
     {
-        withdraw(balanceOf(msg.sender));
-        getReward();
-    }
-
-    function getReward()
-    public
-    updateReward(msg.sender)
-    {
-        if (breaker == false) {
-            require(voteLock[msg.sender] > block.number, "!voted");
-        }
-
-        uint256 reward = earned(msg.sender);
-
-        if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardToken.safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
-        }
+        require(_token != rewardToken, "reward");
+        require(_token != voteToken, "vote");
+        _token.safeTransfer(owner, amount);
     }
 
     function notifyRewardAmount(uint256 reward)
@@ -453,17 +248,258 @@ IRewardDistributionRecipient
         emit RewardAdded(reward);
     }
 
-    function totalSupply()
-    public view
-    returns (uint256)
+    function exit()
+    external
     {
-        return _totalSupply;
+        withdraw(balanceOf(msg.sender));
+        getReward();
     }
 
-    function balanceOf(address account)
-    public view
-    returns (uint256)
+    /**
+     * @dev Turn breaker on or off
+     * @param _breaker State of the breaker
+     */
+    function setBreaker(bool _breaker)
+    public
+    ownerOnly
     {
-        return _balances[account];
+        breaker = _breaker;
+    }
+
+    /**
+     * @dev Set quorum needed for proposals to pass
+     * @param _quorum The required quorum
+     */
+    function setQuorum(uint _quorum)
+    public
+    ownerOnly
+    {
+        quorum = _quorum;
+    }
+
+    function setMinimum(uint _minimum)
+    public
+    ownerOnly
+    {
+        minimum = _minimum;
+    }
+
+    function setPeriod(uint _period)
+    public
+    ownerOnly
+    {
+        period = _period;
+    }
+
+    function setLock(uint _lock)
+    public
+    ownerOnly
+    {
+        lock = _lock;
+    }
+
+    /**
+     * @dev Create a new proposal
+     * @param executor The address of the contract to execute when the proposal passes
+     * @param hash ????
+     */
+    function propose(
+        address executor,
+        string memory hash
+    )
+    public
+    {
+        require(votesOf(msg.sender) > minimum, "<minimum");
+        proposals[++proposalCount] = Proposal({
+        id : proposalCount,
+        proposer : msg.sender,
+        totalForVotes : 0,
+        totalAgainstVotes : 0,
+        start : block.number,
+        end : period.add(block.number),
+        executor : executor,
+        hash : hash,
+        totalVotesAvailable : totalVotes,
+        quorum : 0,
+        quorumRequired : quorum,
+        open : true
+        });
+
+        emit NewProposal(proposalCount, msg.sender, block.number, period, executor);
+        voteLock[msg.sender] = lock.add(block.number);
+    }
+
+    /**
+     * @dev Execute a proposal
+     * @param id The id of the proposal to execute
+     */
+    function execute(uint id)
+    public
+    {
+        (uint _for, uint _against, uint _quorum) = getStats(id);
+        require(proposals[id].quorumRequired < _quorum, "!quorum");
+        require(proposals[id].end < block.number, "!end");
+        if (proposals[id].open == true) {
+            tallyVotes(id);
+        }
+        IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
+    }
+
+    function tallyVotes(uint id)
+    public
+    {
+        require(proposals[id].open == true, "!open");
+        require(proposals[id].end < block.number, "!end");
+
+        (uint _for, uint _against,) = getStats(id);
+        bool _quorum = false;
+        if (proposals[id].quorum >= proposals[id].quorumRequired) {
+            _quorum = true;
+        }
+        proposals[id].open = false;
+        emit ProposalFinished(id, _for, _against, _quorum);
+    }
+
+    /**
+     * @dev Revoke votes
+     */
+    function revoke()
+    public
+    onlyVoter
+    {
+        voters[msg.sender] = false;
+        if (totalVotes < votes[msg.sender]) {
+            // edge case, should be impossible, but this is defi
+            totalVotes = 0;
+        } else {
+            totalVotes = totalVotes.sub(votes[msg.sender]);
+        }
+        emit RevokeVoter(msg.sender, votes[msg.sender], totalVotes);
+        votes[msg.sender] = 0;
+    }
+
+    /**
+     * @dev Vote for a proposal
+     * @param id The id of the proposal to vote for
+     */
+    function voteFor(uint id)
+    public
+    {
+        require(proposals[id].start > 0, "no such proposal");
+        require(proposals[id].start < block.number, "<start");
+        require(proposals[id].end > block.number, ">end");
+
+        voters[msg.sender] = true;
+
+        uint _against = proposals[id].againstVotes[msg.sender];
+        if (_against > 0) {
+            proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.sub(_against);
+            proposals[id].againstVotes[msg.sender] = 0;
+        }
+
+        uint vote = votesOf(msg.sender).sub(proposals[id].forVotes[msg.sender]);
+        proposals[id].totalForVotes = proposals[id].totalForVotes.add(vote);
+        proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
+
+        proposals[id].totalVotesAvailable = totalVotes;
+        uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
+        proposals[id].quorum = _votes.mul(10000).div(totalVotes);
+
+        voteLock[msg.sender] = lock.add(block.number);
+
+        emit Vote(id, msg.sender, true, vote);
+    }
+
+    /**
+     * @dev Vote against a proposal
+     * @param id The id of the proposal to vote against
+     */
+    function voteAgainst(uint id)
+    public
+    {
+        require(proposals[id].start > 0, "no such proposal");
+        require(proposals[id].start < block.number, "<start");
+        require(proposals[id].end > block.number, ">end");
+
+        voters[msg.sender] = true;
+
+        uint _for = proposals[id].forVotes[msg.sender];
+        if (_for > 0) {
+            proposals[id].totalForVotes = proposals[id].totalForVotes.sub(_for);
+            proposals[id].forVotes[msg.sender] = 0;
+        }
+
+        uint vote = votesOf(msg.sender).sub(proposals[id].againstVotes[msg.sender]);
+        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(vote);
+        proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
+
+        proposals[id].totalVotesAvailable = totalVotes;
+        uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
+        proposals[id].quorum = _votes.mul(10000).div(totalVotes);
+
+        voteLock[msg.sender] = lock.add(block.number);
+
+        emit Vote(id, msg.sender, false, vote);
+    }
+
+    /**
+     * @dev Stake with vote tokens
+     * @param amount The amount of vote tokens to stake
+     */
+    function stake(uint256 amount)
+    public
+    updateReward(msg.sender)
+    {
+        require(amount > 0, "Cannot stake 0");
+
+        votes[msg.sender] = votes[msg.sender].add(amount);
+        totalVotes = totalVotes.add(amount);
+
+        _totalSupply = _totalSupply.add(amount);
+        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        voteToken.safeTransferFrom(msg.sender, address(this), amount);
+
+        emit Staked(msg.sender, amount);
+    }
+
+    /**
+     * @dev Withdraw staked vote tokens
+     * @param amount The amount of vote tokens to withdraw
+     */
+    function withdraw(uint256 amount)
+    public
+    updateReward(msg.sender)
+    {
+        require(amount > 0, "Cannot withdraw 0");
+
+        votes[msg.sender] = votes[msg.sender].sub(amount);
+        totalVotes = totalVotes.sub(amount);
+
+        if (breaker == false) {
+            require(voteLock[msg.sender] < block.number, "!locked");
+        }
+
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        voteToken.safeTransfer(msg.sender, amount);
+
+        emit Withdrawn(msg.sender, amount);
+    }
+
+    function getReward()
+    public
+    updateReward(msg.sender)
+    {
+        if (breaker == false) {
+            require(voteLock[msg.sender] > block.number, "!voted");
+        }
+
+        uint256 reward = earned(msg.sender);
+
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            rewardToken.safeTransfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
     }
 }

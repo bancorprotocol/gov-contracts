@@ -16,6 +16,11 @@ contract("BancorGovernance", async (accounts) => {
   before(async () => {
     rewardToken = await TestToken.new()
     voteToken = await TestToken.new()
+
+    await rewardToken.mint(
+      rewardDistributor,
+      (100 * decimals).toString()
+    )
   })
 
   beforeEach(async () => {
@@ -23,11 +28,6 @@ contract("BancorGovernance", async (accounts) => {
       rewardToken.address,
       voteToken.address
     );
-
-    await rewardToken.mint(
-      rewardDistributor,
-      (100 * decimals).toString()
-    )
 
     await governance.setRewardDistribution(
       rewardDistributor,
