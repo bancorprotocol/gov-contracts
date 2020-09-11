@@ -1,4 +1,4 @@
-import {mine} from "../timeTravel";
+import {mine, timeTravel} from "../timeTravel";
 import {propose, stake} from "./utils";
 import BigNumber from "bignumber.js"
 
@@ -80,16 +80,14 @@ contract("BancorGovernance", async (accounts) => {
         governance,
         executor
       )
-      // let some time pass!
-      await mine(web3, 2)
       // vote proposal
       await governance.voteFor(
         proposalId,
         {from: executor}
       )
-      // let some time pass!
-      await mine(web3, 2)
-      // exit
+      // time travel 2 days
+      await timeTravel(web3, 2 * 24 * 60 * 60)
+      // get reward
       const {logs} = await governance.getReward(
         {from: executor}
       )
@@ -98,7 +96,7 @@ contract("BancorGovernance", async (accounts) => {
         logs[0].event,
         "RewardPaid"
       )
-
+      // check that we really got rewarded
       const paidReward = new BigNumber(logs[0].args.reward).dividedBy(decimals).toNumber()
       assert.isAbove(paidReward, 0.00000000000000)
     })
