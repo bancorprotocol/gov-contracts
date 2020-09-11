@@ -52,9 +52,24 @@ contract("BancorGovernance", async (accounts) => {
         {from: rewardDistributor}
       )
 
+      // check that reward was really added
       assert.strictEqual(
         logs[0].event,
         "RewardAdded"
+      )
+
+      // check for right reward height
+      assert.strictEqual(
+        logs[0].args.reward.toString(),
+        (reward * decimals).toString()
+      )
+
+      // check that governance contract really has the right balance of reward tokens
+      const balance = await rewardToken.balanceOf(governance.address)
+
+      assert.strictEqual(
+        balance.toString(),
+        (reward * decimals).toString()
       )
     })
   })
