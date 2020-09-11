@@ -16,7 +16,7 @@ jobs:
         run: |
           yarn install --check-files --cache-folder .ycache
           rm -rf .ycache
-          npx ganache-cli@~6.9.1 > ganache-cli.log &
+          npx ganache-cli@~6.10.2 > ganache-cli.log &
       - name: Run tests
         run: |
           yarn lint
