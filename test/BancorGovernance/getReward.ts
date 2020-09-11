@@ -44,11 +44,11 @@ contract("BancorGovernance", async (accounts) => {
       rewardDistributor,
       {from: owner}
     )
-    await governance.setPeriod(
+    await governance.setVotePeriod(
       period,
       {from: owner}
     )
-    await governance.setLock(
+    await governance.setVoteLock(
       lock,
       {from: owner}
     )

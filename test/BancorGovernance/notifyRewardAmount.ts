@@ -46,11 +46,18 @@ contract("BancorGovernance", async (accounts) => {
         {from: rewardDistributor}
       )
 
+      const rewardRateBefore = (await governance.rewardRate.call()).toNumber()
+      assert.strictEqual(rewardRateBefore, 0)
+
       // notify
       const {logs} = await governance.notifyRewardAmount(
         (reward * decimals).toString(),
         {from: rewardDistributor}
       )
+
+      const rewardRateAfter = (await governance.rewardRate.call()).toNumber()
+      // based on 7 days period duration
+      assert.strictEqual(rewardRateAfter, 16534391534391)
 
       // check that reward was really added
       assert.strictEqual(

@@ -46,7 +46,7 @@ contract("BancorGovernance", async (accounts) => {
         2
       )
       // lower period so we dot have to mine 17k blocks
-      await governance.setPeriod(
+      await governance.setVotePeriod(
         period,
         {from: owner}
       )

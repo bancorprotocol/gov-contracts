@@ -51,8 +51,8 @@ IRewardDistributionRecipient
     using SafeERC20 for IERC20;
 
     event NewProposal(uint id, address creator, uint start, uint duration, address executor);
-    event Vote(uint indexed id, address indexed voter, bool vote, uint weight);
     event ProposalFinished(uint indexed id, uint _for, uint _against, bool quorumReached);
+    event Vote(uint indexed id, address indexed voter, bool vote, uint weight);
     event RevokeVoter(address voter, uint votes, uint totalVotes);
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
@@ -67,7 +67,7 @@ IRewardDistributionRecipient
         uint totalForVotes;
         uint totalAgainstVotes;
         uint start; // block start;
-        uint end; // start + period
+        uint end; // start + votePeriod
         address executor;
         string hash;
         uint totalVotesAvailable;
@@ -76,45 +76,55 @@ IRewardDistributionRecipient
         bool open;
     }
 
+    /***********************************
+     * Vote
+     ***********************************/
+    /* vote token setup */
+    IERC20 public voteToken;
+    uint256 private _totalSupply;
+
+    mapping(address => uint256) private _balances;
+    /* Modifications for proposals */
+    mapping(address => uint) public voteLocks; // period that your sake it locked to keep it for voting
+    /* votes of an address */
+    mapping(address => uint) private votes;
+    /* is address voter? */
+    mapping(address => bool) public voters;
+
+    /***********************************
+     * Reward
+     ***********************************/
     /* Default rewards contract */
     IERC20 public rewardToken;
-    IERC20 public voteToken;
-
-    uint256 private _totalSupply;
-    mapping(address => uint256) private _balances;
-
     uint256 public constant DURATION = 7 days;
 
-    uint256 public periodFinish = 0;
+    uint256 public rewardPeriodEnd = 0;
     uint256 public rewardRate = 0;
-    uint256 public lastUpdateTime;
+    uint256 public rewardLastUpdateTime;
     uint256 public rewardPerTokenStored;
 
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+
+    /***********************************
+     * Proposal
+     ***********************************/
     /* number of proposals */
     uint public proposalCount;
     /* period that a proposal is open for voting */
-    uint public period = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
-    uint public lock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
-    uint public minimum = 1e18;
+    uint public votePeriod = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
+    uint public voteLock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
+    uint public voteMinimum = 1e18;
     uint public quorum = 2000;
     uint public totalVotes;
 
     /* Fees breaker, to protect withdraws if anything ever goes wrong */
     bool public breaker = false;
-
-    /* Modifications for proposals */
-    mapping(address => uint) public voteLock; // period that your sake it locked to keep it for voting
     mapping(uint => Proposal) public proposals;
-    /* votes of an address */
-    mapping(address => uint) private votes;
-    /* is address voter? */
-    mapping(address => bool) public voters;
-    mapping(address => uint256) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
-        lastUpdateTime = lastTimeRewardApplicable();
+        rewardLastUpdateTime = lastTimeRewardApplicable();
         if (account != address(0)) {
             rewards[account] = earned(account);
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
@@ -169,7 +179,7 @@ IRewardDistributionRecipient
     public view
     returns (uint256)
     {
-        return Math.min(block.timestamp, periodFinish);
+        return Math.min(block.timestamp, rewardPeriodEnd);
     }
 
     function rewardPerToken()
@@ -183,7 +193,7 @@ IRewardDistributionRecipient
         return
         rewardPerTokenStored.add(
             lastTimeRewardApplicable()
-            .sub(lastUpdateTime)
+            .sub(rewardLastUpdateTime)
             .mul(rewardRate)
             .mul(1e18)
             .div(totalSupply())
@@ -236,15 +246,15 @@ IRewardDistributionRecipient
     updateReward(address(0))
     {
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), reward);
-        if (block.timestamp >= periodFinish) {
+        if (block.timestamp >= rewardPeriodEnd) {
             rewardRate = reward.div(DURATION);
         } else {
-            uint256 remaining = periodFinish.sub(block.timestamp);
+            uint256 remaining = rewardPeriodEnd.sub(block.timestamp);
             uint256 leftover = remaining.mul(rewardRate);
             rewardRate = reward.add(leftover).div(DURATION);
         }
-        lastUpdateTime = block.timestamp;
-        periodFinish = block.timestamp.add(DURATION);
+        rewardLastUpdateTime = block.timestamp;
+        rewardPeriodEnd = block.timestamp.add(DURATION);
         emit RewardAdded(reward);
     }
 
@@ -277,25 +287,25 @@ IRewardDistributionRecipient
         quorum = _quorum;
     }
 
-    function setMinimum(uint _minimum)
+    function setVoteMinimum(uint _voteMinimum)
     public
     ownerOnly
     {
-        minimum = _minimum;
+        voteMinimum = _voteMinimum;
     }
 
-    function setPeriod(uint _period)
+    function setVotePeriod(uint _votePeriod)
     public
     ownerOnly
     {
-        period = _period;
+        votePeriod = _votePeriod;
     }
 
-    function setLock(uint _lock)
+    function setVoteLock(uint _voteLock)
     public
     ownerOnly
     {
-        lock = _lock;
+        voteLock = _voteLock;
     }
 
     /**
@@ -309,14 +319,14 @@ IRewardDistributionRecipient
     )
     public
     {
-        require(votesOf(msg.sender) > minimum, "<minimum");
+        require(votesOf(msg.sender) > voteMinimum, "<voteMinimum");
         proposals[++proposalCount] = Proposal({
         id : proposalCount,
         proposer : msg.sender,
         totalForVotes : 0,
         totalAgainstVotes : 0,
         start : block.number,
-        end : period.add(block.number),
+        end : votePeriod.add(block.number),
         executor : executor,
         hash : hash,
         totalVotesAvailable : totalVotes,
@@ -325,8 +335,8 @@ IRewardDistributionRecipient
         open : true
         });
 
-        emit NewProposal(proposalCount, msg.sender, block.number, period, executor);
-        voteLock[msg.sender] = lock.add(block.number);
+        emit NewProposal(proposalCount, msg.sender, block.number, votePeriod, executor);
+        voteLocks[msg.sender] = voteLock.add(block.number);
     }
 
     /**
@@ -405,7 +415,7 @@ IRewardDistributionRecipient
         uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
 
-        voteLock[msg.sender] = lock.add(block.number);
+        voteLocks[msg.sender] = voteLock.add(block.number);
 
         emit Vote(id, msg.sender, true, vote);
     }
@@ -437,7 +447,7 @@ IRewardDistributionRecipient
         uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
 
-        voteLock[msg.sender] = lock.add(block.number);
+        voteLocks[msg.sender] = voteLock.add(block.number);
 
         emit Vote(id, msg.sender, false, vote);
     }
@@ -476,7 +486,7 @@ IRewardDistributionRecipient
         totalVotes = totalVotes.sub(amount);
 
         if (breaker == false) {
-            require(voteLock[msg.sender] < block.number, "!locked");
+            require(voteLocks[msg.sender] < block.number, "!locked");
         }
 
         _totalSupply = _totalSupply.sub(amount);
@@ -491,7 +501,7 @@ IRewardDistributionRecipient
     updateReward(msg.sender)
     {
         if (breaker == false) {
-            require(voteLock[msg.sender] > block.number, "!voted");
+            require(voteLocks[msg.sender] > block.number, "!voted");
         }
 
         uint256 reward = earned(msg.sender);
