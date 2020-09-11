@@ -109,17 +109,15 @@ IRewardDistributionRecipient
     /***********************************
      * Proposal
      ***********************************/
-    /* number of proposals */
-    uint public proposalCount;
     /* period that a proposal is open for voting */
     uint public votePeriod = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
     uint public voteLock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
     uint public voteMinimum = 1e18;
     uint public quorum = 2000;
     uint public totalVotes;
-
-    /* Fees breaker, to protect withdraws if anything ever goes wrong */
-    bool public breaker = false;
+    /* number of proposals */
+    uint public proposalCount;
+    
     mapping(uint => Proposal) public proposals;
 
     modifier updateReward(address account) {
@@ -263,17 +261,6 @@ IRewardDistributionRecipient
     {
         withdraw(balanceOf(msg.sender));
         getReward();
-    }
-
-    /**
-     * @dev Turn breaker on or off
-     * @param _breaker State of the breaker
-     */
-    function setBreaker(bool _breaker)
-    public
-    ownerOnly
-    {
-        breaker = _breaker;
     }
 
     /**
@@ -485,10 +472,6 @@ IRewardDistributionRecipient
         votes[msg.sender] = votes[msg.sender].sub(amount);
         totalVotes = totalVotes.sub(amount);
 
-        if (breaker == false) {
-            require(voteLocks[msg.sender] < block.number, "!locked");
-        }
-
         _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         voteToken.safeTransfer(msg.sender, amount);
@@ -500,10 +483,6 @@ IRewardDistributionRecipient
     public
     updateReward(msg.sender)
     {
-        if (breaker == false) {
-            require(voteLocks[msg.sender] > block.number, "!voted");
-        }
-
         uint256 reward = earned(msg.sender);
 
         if (reward > 0) {

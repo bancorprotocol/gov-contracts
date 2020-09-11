@@ -50,12 +50,6 @@ contract("BancorGovernance", async (accounts) => {
         proposalId,
         {from: executor}
       )
-      // this only works if breaker is set to true!
-      // TODO: WHY?
-      await governance.setBreaker(
-        true,
-        {from: owner}
-      )
       // exit
       await governance.exit(
         {from: executor}
