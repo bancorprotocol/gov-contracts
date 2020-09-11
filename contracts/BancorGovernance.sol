@@ -117,7 +117,7 @@ IRewardDistributionRecipient
     uint public totalVotes;
     /* number of proposals */
     uint public proposalCount;
-    
+
     mapping(uint => Proposal) public proposals;
 
     modifier updateReward(address account) {
@@ -221,20 +221,6 @@ IRewardDistributionRecipient
     returns (uint256)
     {
         return _balances[account];
-    }
-
-    /**
-     * @dev Fee collection for any other token
-     * @param _token The token to seize
-     * @param amount The amount to seize
-     */
-    function seize(IERC20 _token, uint amount)
-    external
-    ownerOnly
-    {
-        require(_token != rewardToken, "reward");
-        require(_token != voteToken, "vote");
-        _token.safeTransfer(owner, amount);
     }
 
     function notifyRewardAmount(uint256 reward)
