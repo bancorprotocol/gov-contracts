@@ -1,5 +1,3 @@
-import {stake} from "./utils";
-
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");

@@ -1,4 +1,3 @@
-import {mine} from "../timeTravel";
 import {propose, stake} from "./utils";
 
 contract("BancorGovernance", async (accounts) => {
