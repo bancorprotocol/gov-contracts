@@ -1,3 +1,5 @@
+import {timeTravel} from "../timeTravel";
+
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");
@@ -34,7 +36,7 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   describe("#notifyRewardAmount()", async () => {
-    it("should notify the reward amount", async () => {
+    it("should notify the reward amount initially", async () => {
       const reward = 10
 
       // grant governance access to the reward token owner by the distributor
@@ -55,7 +57,7 @@ contract("BancorGovernance", async (accounts) => {
 
       const rewardRateAfter = (await governance.rewardRate.call()).toNumber()
       // based on 7 days period duration
-      assert.strictEqual(rewardRateAfter, 16534391534391)
+      assert.approximately(rewardRateAfter, 16534391534391, 1000000000)
 
       // check that reward was really added
       assert.strictEqual(
@@ -77,5 +79,46 @@ contract("BancorGovernance", async (accounts) => {
         (reward * decimals).toString()
       )
     })
+
+    it("should add to the reward amount if the epoch has not passed yet", async () => {
+      const reward = 10
+
+      // grant governance access to the reward token owner by the distributor
+      await rewardToken.approve(
+        governance.address,
+        // approve twice the reward so we have some left overs
+        (reward * 2 * decimals).toString(),
+        {from: rewardDistributor}
+      )
+
+      // notify initially
+      await governance.notifyRewardAmount(
+        (reward * decimals).toString(),
+        {from: rewardDistributor}
+      )
+
+      const rewardRateAfter1: number = (await governance.rewardRate.call()).toNumber()
+      // based on 7 days period duration
+      assert.approximately(rewardRateAfter1, 16534391534391, 1000000000)
+
+      const balance1: string = (await rewardToken.balanceOf(governance.address)).toString()
+      assert.strictEqual(balance1, (reward * decimals).toString())
+
+      // travel 3 days ahead
+      await timeTravel(web3, 3 * 24 * 60 * 60)
+
+      // do premature reward notification
+      await governance.notifyRewardAmount(
+        (reward * decimals).toString(),
+        {from: rewardDistributor}
+      )
+
+      const rewardRateAfter2: number = (await governance.rewardRate.call()).toNumber()
+      assert.approximately(rewardRateAfter2, 25982615268329, 1000000000)
+
+      const balance2: string = (await rewardToken.balanceOf(governance.address)).toString()
+      assert.strictEqual(balance2, (reward * 2 * decimals).toString())
+    })
+
   })
 })

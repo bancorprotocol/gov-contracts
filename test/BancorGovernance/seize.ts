@@ -1,3 +1,6 @@
+// @ts-ignore
+import * as truffleAssert from "truffle-assertions"
+
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
   const TestToken = artifacts.require("TestToken");
@@ -72,6 +75,32 @@ contract("BancorGovernance", async (accounts) => {
       assert.strictEqual(
         ownerBalance,
         amt
+      )
+    })
+
+    it("should fail to seize vote tokens", async () => {
+      await truffleAssert.fails(
+        // seize
+        governance.seize(
+          voteToken.address,
+          0,
+          {from: owner}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "vote"
+      )
+    })
+
+    it("should fail to seize reward tokens", async () => {
+      await truffleAssert.fails(
+        // seize
+        governance.seize(
+          rewardToken.address,
+          0,
+          {from: owner}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "reward"
       )
     })
   })
