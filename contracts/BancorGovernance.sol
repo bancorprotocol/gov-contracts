@@ -238,18 +238,18 @@ contract BancorGovernance is Owned
     {
         require(votesOf(msg.sender) > voteMinimum, "<voteMinimum");
         proposals[++proposalCount] = Proposal({
-        id : proposalCount,
-        proposer : msg.sender,
-        totalForVotes : 0,
-        totalAgainstVotes : 0,
-        start : block.number,
-        end : votePeriod.add(block.number),
-        executor : executor,
-        hash : hash,
-        totalVotesAvailable : totalVotes,
-        quorum : 0,
-        quorumRequired : quorum,
-        open : true
+            id : proposalCount,
+            proposer : msg.sender,
+            totalForVotes : 0,
+            totalAgainstVotes : 0,
+            start : block.number,
+            end : votePeriod.add(block.number),
+            executor : executor,
+            hash : hash,
+            totalVotesAvailable : totalVotes,
+            quorum : 0,
+            quorumRequired : quorum,
+            open : true
         });
 
         emit NewProposal(proposalCount, msg.sender, block.number, votePeriod, executor);
