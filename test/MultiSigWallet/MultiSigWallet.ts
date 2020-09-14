@@ -6,7 +6,6 @@ contract("BancorGovernance", async (accounts) => {
 
   let MultiSigWalletWithDailyLimit: any
   let governance: any;
-  let rewardToken: any;
   let voteToken: any;
 
   const owner = accounts[0]
@@ -25,7 +24,6 @@ contract("BancorGovernance", async (accounts) => {
   const limitInWei: string = web3.utils.toWei(limit.toString(), "ether")
 
   before(async () => {
-    rewardToken = await TestToken.new()
     voteToken = await TestToken.new()
   })
 
@@ -39,7 +37,6 @@ contract("BancorGovernance", async (accounts) => {
     )
 
     governance = await BancorGovernance.new(
-      rewardToken.address,
       voteToken.address
     );
   })

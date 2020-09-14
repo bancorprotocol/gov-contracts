@@ -8,14 +8,12 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let rewardToken: any;
   let voteToken: any;
 
   const executor = accounts[2]
   const someone = accounts[3]
 
   before(async () => {
-    rewardToken = await TestToken.new()
     voteToken = await TestToken.new()
 
     // get the executor some tokens
@@ -24,7 +22,6 @@ contract("BancorGovernance", async (accounts) => {
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      rewardToken.address,
       voteToken.address
     );
   })

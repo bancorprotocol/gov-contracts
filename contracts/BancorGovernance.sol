@@ -40,12 +40,9 @@ import "@bancor/contracts-solidity/solidity/contracts/utility/Owned.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "./interfaces/IRewardDistributionRecipient.sol";
 import "./interfaces/IExecutor.sol";
 
-contract BancorGovernance is
-Owned,
-IRewardDistributionRecipient
+contract BancorGovernance is Owned
 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -54,10 +51,8 @@ IRewardDistributionRecipient
     event ProposalFinished(uint indexed id, uint _for, uint _against, bool quorumReached);
     event Vote(uint indexed id, address indexed voter, bool vote, uint weight);
     event RevokeVoter(address voter, uint votes, uint totalVotes);
-    event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
-    event RewardPaid(address indexed user, uint256 reward);
 
     struct Proposal {
         uint id;
@@ -92,21 +87,6 @@ IRewardDistributionRecipient
     mapping(address => bool) public voters;
 
     /***********************************
-     * Reward
-     ***********************************/
-    /* Default rewards contract */
-    IERC20 public rewardToken;
-    uint256 public constant DURATION = 7 days;
-
-    uint256 public rewardPeriodEnd = 0;
-    uint256 public rewardRate = 0;
-    uint256 public rewardLastUpdateTime;
-    uint256 public rewardPerTokenStored;
-
-    mapping(address => uint256) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
-
-    /***********************************
      * Proposal
      ***********************************/
     /* period that a proposal is open for voting */
@@ -120,28 +100,16 @@ IRewardDistributionRecipient
 
     mapping(uint => Proposal) public proposals;
 
-    modifier updateReward(address account) {
-        rewardPerTokenStored = rewardPerToken();
-        rewardLastUpdateTime = lastTimeRewardApplicable();
-        if (account != address(0)) {
-            rewards[account] = earned(account);
-            userRewardPerTokenPaid[account] = rewardPerTokenStored;
-        }
-        _;
-    }
-
     modifier onlyVoter() {
         require(voters[msg.sender] == true, "!voter");
         _;
     }
 
     constructor(
-        address _rewardTokenAddress,
         address _voteTokenAddress
     )
     public
     {
-        rewardToken = IERC20(_rewardTokenAddress);
         voteToken = IERC20(_voteTokenAddress);
     }
 
@@ -173,42 +141,6 @@ IRewardDistributionRecipient
         return votes[voter];
     }
 
-    function lastTimeRewardApplicable()
-    public view
-    returns (uint256)
-    {
-        return Math.min(block.timestamp, rewardPeriodEnd);
-    }
-
-    function rewardPerToken()
-    public view
-    returns (uint256)
-    {
-        if (totalSupply() == 0) {
-            return rewardPerTokenStored;
-        }
-
-        return
-        rewardPerTokenStored.add(
-            lastTimeRewardApplicable()
-            .sub(rewardLastUpdateTime)
-            .mul(rewardRate)
-            .mul(1e18)
-            .div(totalSupply())
-        );
-    }
-
-    function earned(address account)
-    public view
-    returns (uint256)
-    {
-        return
-        balanceOf(account)
-        .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
-        .div(1e18)
-        .add(rewards[account]);
-    }
-
     function totalSupply()
     public view
     returns (uint256)
@@ -223,30 +155,10 @@ IRewardDistributionRecipient
         return _balances[account];
     }
 
-    function notifyRewardAmount(uint256 reward)
-    external
-    override
-    onlyRewardDistribution
-    updateReward(address(0))
-    {
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), reward);
-        if (block.timestamp >= rewardPeriodEnd) {
-            rewardRate = reward.div(DURATION);
-        } else {
-            uint256 remaining = rewardPeriodEnd.sub(block.timestamp);
-            uint256 leftover = remaining.mul(rewardRate);
-            rewardRate = reward.add(leftover).div(DURATION);
-        }
-        rewardLastUpdateTime = block.timestamp;
-        rewardPeriodEnd = block.timestamp.add(DURATION);
-        emit RewardAdded(reward);
-    }
-
     function exit()
     external
     {
         withdraw(balanceOf(msg.sender));
-        getReward();
     }
 
     /**
@@ -431,7 +343,6 @@ IRewardDistributionRecipient
      */
     function stake(uint256 amount)
     public
-    updateReward(msg.sender)
     {
         require(amount > 0, "Cannot stake 0");
 
@@ -451,7 +362,6 @@ IRewardDistributionRecipient
      */
     function withdraw(uint256 amount)
     public
-    updateReward(msg.sender)
     {
         require(amount > 0, "Cannot withdraw 0");
 
@@ -463,18 +373,5 @@ IRewardDistributionRecipient
         voteToken.safeTransfer(msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount);
-    }
-
-    function getReward()
-    public
-    updateReward(msg.sender)
-    {
-        uint256 reward = earned(msg.sender);
-
-        if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardToken.safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
-        }
     }
 }

@@ -9,12 +9,10 @@ contract("BancorGovernance", async (accounts) => {
 
   let governance: any;
   let voteToken: any;
-  let rewardToken: any;
 
   const executor = accounts[2]
 
   before(async () => {
-    rewardToken = await TestToken.new()
     voteToken = await TestToken.new()
 
     // get the executor some tokens
@@ -23,7 +21,6 @@ contract("BancorGovernance", async (accounts) => {
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      rewardToken.address,
       voteToken.address
     );
   })
