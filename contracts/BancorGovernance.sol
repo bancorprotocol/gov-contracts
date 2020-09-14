@@ -47,12 +47,38 @@ contract BancorGovernance is Owned
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    event NewProposal(uint id, address creator, uint start, uint duration, address executor);
-    event ProposalFinished(uint indexed id, uint _for, uint _against, bool quorumReached);
-    event Vote(uint indexed id, address indexed voter, bool vote, uint weight);
-    event RevokeVoter(address voter, uint votes, uint totalVotes);
-    event Staked(address indexed user, uint256 amount);
-    event Withdrawn(address indexed user, uint256 amount);
+    event NewProposal(
+        uint indexed id,
+        address creator,
+        uint start,
+        uint duration,
+        address executor
+    );
+    event ProposalFinished(
+        uint indexed id,
+        uint _for,
+        uint _against,
+        bool quorumReached
+    );
+    event Vote(
+        uint indexed id,
+        address indexed voter,
+        bool vote,
+        uint weight
+    );
+    event RevokeVoter(
+        address indexed voter,
+        uint votes,
+        uint totalVotes
+    );
+    event Staked(
+        address indexed user,
+        uint256 amount
+    );
+    event Withdrawn(
+        address indexed user,
+        uint256 amount
+    );
 
     struct Proposal {
         uint id;
@@ -107,7 +133,7 @@ contract BancorGovernance is Owned
     constructor(
         address _voteTokenAddress
     )
-    public
+        public
     {
         voteToken = IERC20(_voteTokenAddress);
     }
@@ -119,9 +145,11 @@ contract BancorGovernance is Owned
      * @return _against
      * @return _quorum
      */
-    function getStats(uint id)
-    public view
-    returns (uint _for, uint _against, uint _quorum)
+    function getStats(
+        uint id
+    )
+        public view
+        returns (uint _for, uint _against, uint _quorum)
     {
         _for = proposals[id].totalForVotes;
         _against = proposals[id].totalAgainstVotes;
@@ -133,22 +161,26 @@ contract BancorGovernance is Owned
         _quorum = _total.mul(10000).div(proposals[id].totalVotesAvailable);
     }
 
-    function votesOf(address voter)
-    public view
-    returns (uint)
+    function votesOf(
+        address voter
+    )
+        public view
+        returns (uint)
     {
         return votes[voter];
     }
 
-    function balanceOf(address account)
-    public view
-    returns (uint256)
+    function balanceOf(
+        address account
+    )
+        public view
+        returns (uint256)
     {
         return _balances[account];
     }
 
     function exit()
-    external
+        external
     {
         withdraw(balanceOf(msg.sender));
     }
@@ -157,30 +189,38 @@ contract BancorGovernance is Owned
      * @dev Set quorum needed for proposals to pass
      * @param _quorum The required quorum
      */
-    function setQuorum(uint _quorum)
-    public
-    ownerOnly
+    function setQuorum(
+        uint _quorum
+    )
+        public
+        ownerOnly
     {
         quorum = _quorum;
     }
 
-    function setVoteMinimum(uint _voteMinimum)
-    public
-    ownerOnly
+    function setVoteMinimum(
+        uint _voteMinimum
+    )
+        public
+        ownerOnly
     {
         voteMinimum = _voteMinimum;
     }
 
-    function setVotePeriod(uint _votePeriod)
-    public
-    ownerOnly
+    function setVotePeriod(
+        uint _votePeriod
+    )
+        public
+        ownerOnly
     {
         votePeriod = _votePeriod;
     }
 
-    function setVoteLock(uint _voteLock)
-    public
-    ownerOnly
+    function setVoteLock(
+        uint _voteLock
+    )
+        public
+        ownerOnly
     {
         voteLock = _voteLock;
     }
@@ -194,7 +234,7 @@ contract BancorGovernance is Owned
         address executor,
         string memory hash
     )
-    public
+        public
     {
         require(votesOf(msg.sender) > voteMinimum, "<voteMinimum");
         proposals[++proposalCount] = Proposal({
@@ -220,8 +260,10 @@ contract BancorGovernance is Owned
      * @dev Execute a proposal
      * @param id The id of the proposal to execute
      */
-    function execute(uint id)
-    public
+    function execute(
+        uint id
+    )
+        public
     {
         (uint _for, uint _against, uint _quorum) = getStats(id);
         require(proposals[id].quorumRequired < _quorum, "!quorum");
@@ -232,8 +274,10 @@ contract BancorGovernance is Owned
         IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
     }
 
-    function tallyVotes(uint id)
-    public
+    function tallyVotes(
+        uint id
+    )
+        public
     {
         require(proposals[id].open == true, "!open");
         require(proposals[id].end < block.number, "!end");
@@ -251,8 +295,8 @@ contract BancorGovernance is Owned
      * @dev Revoke votes
      */
     function revoke()
-    public
-    onlyVoter
+        public
+        onlyVoter
     {
         voters[msg.sender] = false;
         if (totalVotes < votes[msg.sender]) {
@@ -269,8 +313,10 @@ contract BancorGovernance is Owned
      * @dev Vote for a proposal
      * @param id The id of the proposal to vote for
      */
-    function voteFor(uint id)
-    public
+    function voteFor(
+        uint id
+    )
+        public
     {
         require(proposals[id].start > 0, "no such proposal");
         require(proposals[id].start < block.number, "<start");
@@ -301,8 +347,10 @@ contract BancorGovernance is Owned
      * @dev Vote against a proposal
      * @param id The id of the proposal to vote against
      */
-    function voteAgainst(uint id)
-    public
+    function voteAgainst(
+        uint id
+    )
+        public
     {
         require(proposals[id].start > 0, "no such proposal");
         require(proposals[id].start < block.number, "<start");
@@ -333,8 +381,10 @@ contract BancorGovernance is Owned
      * @dev Stake with vote tokens
      * @param amount The amount of vote tokens to stake
      */
-    function stake(uint256 amount)
-    public
+    function stake(
+        uint256 amount
+    )
+        public
     {
         require(amount > 0, "Cannot stake 0");
 
@@ -351,8 +401,10 @@ contract BancorGovernance is Owned
      * @dev Withdraw staked vote tokens
      * @param amount The amount of vote tokens to withdraw
      */
-    function withdraw(uint256 amount)
-    public
+    function withdraw(
+        uint256 amount
+    )
+        public
     {
         require(amount > 0, "Cannot withdraw 0");
 
