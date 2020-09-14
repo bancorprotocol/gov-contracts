@@ -10,10 +10,6 @@
     "compiler-version": [
       "error",
       "0.6.12"
-    ],
-    "max-states-count": [
-      "warn",
-      22
     ]
   }
 }
