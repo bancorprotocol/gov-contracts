@@ -76,7 +76,6 @@ contract BancorGovernance is Owned
      ***********************************/
     /* vote token setup */
     IERC20 public voteToken;
-    uint256 private _totalSupply;
 
     mapping(address => uint256) private _balances;
     /* Modifications for proposals */
@@ -139,13 +138,6 @@ contract BancorGovernance is Owned
     returns (uint)
     {
         return votes[voter];
-    }
-
-    function totalSupply()
-    public view
-    returns (uint256)
-    {
-        return _totalSupply;
     }
 
     function balanceOf(address account)
@@ -349,7 +341,6 @@ contract BancorGovernance is Owned
         votes[msg.sender] = votes[msg.sender].add(amount);
         totalVotes = totalVotes.add(amount);
 
-        _totalSupply = _totalSupply.add(amount);
         _balances[msg.sender] = _balances[msg.sender].add(amount);
         voteToken.safeTransferFrom(msg.sender, address(this), amount);
 
@@ -368,7 +359,6 @@ contract BancorGovernance is Owned
         votes[msg.sender] = votes[msg.sender].sub(amount);
         totalVotes = totalVotes.sub(amount);
 
-        _totalSupply = _totalSupply.sub(amount);
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         voteToken.safeTransfer(msg.sender, amount);
 
