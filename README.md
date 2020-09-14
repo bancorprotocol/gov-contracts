@@ -7,4 +7,7 @@ Bancor Governance contracts
 - Unit tests written in typescript
 - Solhint for linting contracts
 - snyk for resolving dependency issues
-- Migrated reward token into governance contract
+- Removed reward
+- 98% code coverage
+- Gnosis Multi Sig Wallet support and tests
+- Docs generator
