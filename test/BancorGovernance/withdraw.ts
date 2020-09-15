@@ -51,7 +51,7 @@ contract("BancorGovernance", async (accounts) => {
           {from: executor}
         ),
         truffleAssert.ErrorType.REVERT,
-        "Cannot withdraw 0"
+        "can't withdraw 0"
       )
     })
   })
