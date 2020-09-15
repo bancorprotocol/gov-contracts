@@ -19,11 +19,11 @@ jobs:
           npx ganache-cli@~6.10.2 > ganache-cli.log &
       - name: Run Checks
         run: |
-          yarn lint
           yarn prettier
+          yarn lint
+          yarn build
       - name: Run tests
         run: |
-          yarn build
           yarn coverage
       - name: Run migration
         run: |
