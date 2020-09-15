@@ -67,7 +67,7 @@ contract BancorGovernance is Owned {
     );
     event RevokeVoter(address indexed voter, uint256 votes, uint256 totalVotes);
     event Staked(address indexed user, uint256 amount);
-    event Withdrawn(address indexed user, uint256 amount);
+    event Unstaked(address indexed user, uint256 amount);
 
     struct Proposal {
         uint256 id;
@@ -92,9 +92,8 @@ contract BancorGovernance is Owned {
     /* vote token setup */
     IERC20 public voteToken;
 
-    mapping(address => uint256) private _balances;
-    /* Modifications for proposals */
-    mapping(address => uint256) public voteLocks; // period that your stake it locked to keep it for voting
+    /* period that your stake it locked to keep it for voting */
+    mapping(address => uint256) public voteLocks;
     /* votes of an address */
     mapping(address => uint256) private votes;
     /* is address voter? */
@@ -103,11 +102,15 @@ contract BancorGovernance is Owned {
     /***********************************
      * Proposal
      ***********************************/
-    /* period that a proposal is open for voting */
-    uint256 public votePeriod = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
-    uint256 public voteLock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
+    /* voting period in blocks ~ 17280 3 days for 15s/block */
+    uint256 public votePeriod = 17280;
+    /* vote lock in blocks ~ 17280 3 days for 15s/block */
+    uint256 public voteLock = 17280;
+    /* minimum stake required */
     uint256 public voteMinimum = 1e18;
+    /* quorum needed for a proposal to pass */
     uint256 public quorum = 2000;
+    /* sum of current total votes */
     uint256 public totalVotes;
     /* number of proposals */
     uint256 public proposalCount;
@@ -115,7 +118,12 @@ contract BancorGovernance is Owned {
     mapping(uint256 => Proposal) public proposals;
 
     modifier onlyVoter() {
-        require(voters[msg.sender] == true, "!voter");
+        require(voters[msg.sender] == true, "ERR_NOT_VOTER");
+        _;
+    }
+
+    modifier onlyStaker() {
+        require(votes[msg.sender] > 0, "ERR_NOT_STAKER");
         _;
     }
 
@@ -153,12 +161,11 @@ contract BancorGovernance is Owned {
         return votes[voter];
     }
 
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
-    }
-
+    /**
+     * @dev Exit this contract and remove all the stake
+     */
     function exit() external {
-        withdraw(balanceOf(msg.sender));
+        unstake(votesOf(msg.sender));
     }
 
     /**
@@ -187,7 +194,8 @@ contract BancorGovernance is Owned {
      * @param hash ????
      */
     function propose(address executor, string memory hash) public {
-        require(votesOf(msg.sender) > voteMinimum, "<voteMinimum");
+        require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
+        // create new proposal
         proposals[++proposalCount] = Proposal({
             id: proposalCount,
             proposer: msg.sender,
@@ -202,7 +210,7 @@ contract BancorGovernance is Owned {
             quorumRequired: quorum,
             open: true
         });
-
+        // emit proposal event
         emit NewProposal(
             proposalCount,
             msg.sender,
@@ -210,6 +218,7 @@ contract BancorGovernance is Owned {
             votePeriod,
             executor
         );
+        // lock proposer
         voteLocks[msg.sender] = voteLock.add(block.number);
     }
 
@@ -219,8 +228,8 @@ contract BancorGovernance is Owned {
      */
     function execute(uint256 id) public {
         (uint256 _for, uint256 _against, uint256 _quorum) = getStats(id);
-        require(proposals[id].quorumRequired < _quorum, "!quorum");
-        require(proposals[id].end < block.number, "!end");
+        require(proposals[id].quorumRequired < _quorum, "ERR_NO_QUORUM");
+        require(proposals[id].end < block.number, "ERR_NOT_ENDED");
         if (proposals[id].open) {
             tallyVotes(id);
         }
@@ -228,8 +237,8 @@ contract BancorGovernance is Owned {
     }
 
     function tallyVotes(uint256 id) public {
-        require(proposals[id].open, "!open");
-        require(proposals[id].end < block.number, "!end");
+        require(proposals[id].open, "ERR_NOT_OPEN");
+        require(proposals[id].end < block.number, "ERR_NOT_ENDED");
 
         (uint256 _for, uint256 _against, ) = getStats(id);
         bool _quorum = false;
@@ -245,13 +254,13 @@ contract BancorGovernance is Owned {
      */
     function revoke() public onlyVoter {
         voters[msg.sender] = false;
-        if (totalVotes < votes[msg.sender]) {
+        if (totalVotes < votesOf(msg.sender)) {
             // edge case, should be impossible, but this is defi
             totalVotes = 0;
         } else {
             totalVotes = totalVotes.sub(votes[msg.sender]);
         }
-        emit RevokeVoter(msg.sender, votes[msg.sender], totalVotes);
+        emit RevokeVoter(msg.sender, votesOf(msg.sender), totalVotes);
         votes[msg.sender] = 0;
     }
 
@@ -259,35 +268,44 @@ contract BancorGovernance is Owned {
      * @dev Vote for a proposal
      * @param id The id of the proposal to vote for
      */
-    function voteFor(uint256 id) public {
-        require(proposals[id].start > 0, "no such proposal");
-        require(proposals[id].start < block.number, "<start");
-        require(proposals[id].end > block.number, ">end");
+    function voteFor(uint256 id) public onlyStaker {
+        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
+        require(proposals[id].start < block.number, "ERR_NOT_STARTED");
+        require(proposals[id].end > block.number, "ERR_ENDED");
 
+        // mark sender as voter
         voters[msg.sender] = true;
 
+        // get against votes for this voter
         uint256 _against = proposals[id].againstVotes[msg.sender];
+        // do we have against votes for this voter?
         if (_against > 0) {
+            // yes, remove the against votes first
             proposals[id].totalAgainstVotes = proposals[id]
                 .totalAgainstVotes
                 .sub(_against);
             proposals[id].againstVotes[msg.sender] = 0;
         }
 
+        // calculate voting power in case voting for twice
         uint256 vote = votesOf(msg.sender).sub(
             proposals[id].forVotes[msg.sender]
         );
+        // increase total for votes of the proposal
         proposals[id].totalForVotes = proposals[id].totalForVotes.add(vote);
+        // set for votes to the votes of the voter
         proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
-
+        // update total votes available on the proposal
         proposals[id].totalVotesAvailable = totalVotes;
+        // calculate overall votes
         uint256 _votes = proposals[id].totalForVotes.add(
             proposals[id].totalAgainstVotes
         );
+        // recalculate quorum based on overall votes
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
-
+        // lock voter
         voteLocks[msg.sender] = voteLock.add(block.number);
-
+        // emit vote event
         emit Vote(id, msg.sender, true, vote);
     }
 
@@ -295,11 +313,12 @@ contract BancorGovernance is Owned {
      * @dev Vote against a proposal
      * @param id The id of the proposal to vote against
      */
-    function voteAgainst(uint256 id) public {
-        require(proposals[id].start > 0, "no such proposal");
-        require(proposals[id].start < block.number, "<start");
-        require(proposals[id].end > block.number, ">end");
+    function voteAgainst(uint256 id) public onlyStaker {
+        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
+        require(proposals[id].start < block.number, "ERR_NOT_STARTED");
+        require(proposals[id].end > block.number, "ERR_ENDED");
 
+        // mark sender as voter
         voters[msg.sender] = true;
 
         uint256 _for = proposals[id].forVotes[msg.sender];
@@ -314,9 +333,11 @@ contract BancorGovernance is Owned {
         proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(
             vote
         );
+        // set against votes to the votes of the voter
         proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
-
+        // update total votes available on the proposal
         proposals[id].totalVotesAvailable = totalVotes;
+
         uint256 _votes = proposals[id].totalForVotes.add(
             proposals[id].totalAgainstVotes
         );
@@ -332,30 +353,33 @@ contract BancorGovernance is Owned {
      * @param amount The amount of vote tokens to stake
      */
     function stake(uint256 amount) public {
-        require(amount > 0, "can't stake 0");
+        require(amount > 0, "ERR_STAKE_ZERO");
 
-        votes[msg.sender] = votes[msg.sender].add(amount);
+        // increase vote power
+        votes[msg.sender] = votesOf(msg.sender).add(amount);
+        // increase total votes
         totalVotes = totalVotes.add(amount);
-
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        // transfer tokens to this contract
         voteToken.safeTransferFrom(msg.sender, address(this), amount);
-
+        // emit staked event
         emit Staked(msg.sender, amount);
     }
 
     /**
-     * @dev Withdraw staked vote tokens
-     * @param amount The amount of vote tokens to withdraw
+     * @dev Unstake staked vote tokens
+     * @param amount The amount of vote tokens to unstake
      */
-    function withdraw(uint256 amount) public {
-        require(amount > 0, "can't withdraw 0");
+    function unstake(uint256 amount) public {
+        require(amount > 0, "ERR_UNSTAKE_ZERO");
+        require(voteLocks[msg.sender] < block.number, "ERR_LOCKED");
 
-        votes[msg.sender] = votes[msg.sender].sub(amount);
+        // reduce votes for user
+        votes[msg.sender] = votesOf(msg.sender).sub(amount);
+        // reduce total votes
         totalVotes = totalVotes.sub(amount);
-
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        // transfer tokens back
         voteToken.safeTransfer(msg.sender, amount);
-
-        emit Withdrawn(msg.sender, amount);
+        // emit unstaked event
+        emit Unstaked(msg.sender, amount);
     }
 }

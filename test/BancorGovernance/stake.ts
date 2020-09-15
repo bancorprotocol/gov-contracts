@@ -44,7 +44,7 @@ contract("BancorGovernance", async (accounts) => {
           {from: executor}
         ),
         truffleAssert.ErrorType.REVERT,
-        "can't stake 0"
+        "ERR_STAKE_ZERO"
       )
     })
   })

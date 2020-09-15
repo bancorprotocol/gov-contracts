@@ -3,10 +3,9 @@ pragma solidity 0.6.12;
 
 interface IExecutor {
     function execute(
-        uint _id,
-        uint _for,
-        uint _against,
-        uint _quorum
-    )
-    external;
+        uint256 _id,
+        uint256 _for,
+        uint256 _against,
+        uint256 _quorum
+    ) external;
 }

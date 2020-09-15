@@ -51,6 +51,39 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
+    it("should not be able to revoke twice", async () => {
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        executor,
+        2
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        executor
+      )
+      // vote for
+      await governance.voteFor(
+        proposalId,
+        {from: executor}
+      )
+      // revoke
+      await governance.revoke(
+        {from: executor}
+      )
+      // should not revoke twice
+      await truffleAssert.fails(
+        // revoke
+        governance.revoke(
+          {from: executor}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_NOT_VOTER"
+      );
+    })
+
     it("should not be able to revoke if not voted", async () => {
       await truffleAssert.fails(
         // revoke
@@ -58,7 +91,7 @@ contract("BancorGovernance", async (accounts) => {
           {from: someone}
         ),
         truffleAssert.ErrorType.REVERT,
-        "!voter"
+        "ERR_NOT_VOTER"
       );
     })
   })

@@ -11,13 +11,13 @@ contract("BancorGovernance", async (accounts) => {
   let governance: any;
   let voteToken: any;
 
-  const executor = accounts[2]
+  const proposer = accounts[2]
 
   before(async () => {
     voteToken = await TestToken.new()
 
-    // get the executor some tokens
-    await voteToken.mint(executor, (100 * decimals).toString())
+    // get the proposer some tokens
+    await voteToken.mint(proposer, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
@@ -32,7 +32,7 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
 
@@ -42,7 +42,7 @@ contract("BancorGovernance", async (accounts) => {
       const {logs} = await governance.propose(
         contractToExecute,
         web3.utils.keccak256(contractToExecute),
-        {from: executor}
+        {from: proposer}
       )
 
       assert.strictEqual(
@@ -56,7 +56,7 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         1
       )
 
@@ -65,10 +65,10 @@ contract("BancorGovernance", async (accounts) => {
         governance.propose(
           contractToExecute,
           web3.utils.keccak256(contractToExecute),
-          {from: executor}
+          {from: proposer}
         ),
         truffleAssert.ErrorType.REVERT,
-        "<voteMinimum"
+        "ERR_NOT_VOTE_MINIMUM"
       )
     })
   })

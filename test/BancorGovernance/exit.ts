@@ -1,4 +1,7 @@
 import {propose, stake} from "./utils";
+import {mine} from "../timeTravel";
+// @ts-ignore
+import * as truffleAssert from "truffle-assertions"
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
@@ -29,7 +32,51 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   describe("#exit()", async () => {
-    it("should be able to exit", async () => {
+    it("should be able to exit when not voted", async () => {
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        executor,
+        2
+      )
+      // exit
+      await governance.exit(
+        {from: executor}
+      )
+    })
+
+    it("should be able to exit when the period has passed", async () => {
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        executor,
+        2
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        executor
+      )
+      // reduce vote lock
+      await governance.setVoteLock(
+        2,
+        {from: owner}
+      )
+      // vote
+      await governance.voteFor(
+        proposalId,
+        {from: executor}
+      )
+      await mine(web3, 2)
+      // exit
+      await governance.exit(
+        {from: executor}
+      )
+    })
+
+    it("should fail to exit when the period has not passed", async () => {
       // stake
       await stake(
         governance,
@@ -47,9 +94,13 @@ contract("BancorGovernance", async (accounts) => {
         proposalId,
         {from: executor}
       )
-      // exit
-      await governance.exit(
-        {from: executor}
+      await truffleAssert.fails(
+        // exit
+        governance.exit(
+          {from: executor}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_LOCKED"
       )
     })
   })

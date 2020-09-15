@@ -10,13 +10,16 @@ contract("BancorGovernance", async (accounts) => {
   let governance: any;
   let voteToken: any;
 
-  const executor = accounts[2]
+  const proposer = accounts[2]
+  const voter = accounts[3]
 
   before(async () => {
     voteToken = await TestToken.new()
 
     // get the executor some tokens
-    await voteToken.mint(executor, (100 * decimals).toString())
+    await voteToken.mint(proposer, (100 * decimals).toString())
+    // get voter some tokens
+    await voteToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
@@ -26,44 +29,124 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   describe("#voteFor()", async () => {
-    it("should vote for a proposal", async () => {
+    it("should vote for own proposal", async () => {
       // stake
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
       )
       // vote for
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: proposer}
       )
     })
 
-    it("should override voting against a proposal when voting for it", async () => {
+    it("should vote for others proposal", async () => {
       const amount = 2
-      // stake
+      // proposer stake
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         amount
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
+      )
+      // voter stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        amount
+      )
+      // vote for
+      await governance.voteFor(
+        proposalId,
+        {from: voter}
+      )
+    })
+
+    it("should note vote for twice", async () => {
+      const amount = 2
+      // proposer stake
+      await stake(
+        governance,
+        voteToken,
+        proposer,
+        amount
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        proposer
+      )
+      // voter stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        amount
+      )
+      // vote for once
+      await governance.voteFor(
+        proposalId,
+        {from: voter}
+      )
+      // should be two
+      const votesAfterOnce = (await governance.proposals(proposalId)).totalForVotes.toString()
+      assert.strictEqual(
+        votesAfterOnce,
+        (amount * decimals).toString()
+      )
+      // vote for twice
+      await governance.voteFor(
+        proposalId,
+        {from: voter}
+      )
+      // should still be two
+      const votesAfterTwice = (await governance.proposals(proposalId)).totalForVotes.toString()
+      assert.strictEqual(
+        votesAfterTwice,
+        (amount * decimals).toString()
+      )
+    })
+
+    it("should override voting against a proposal when voting for it", async () => {
+      const amount = 2
+      // proposer stake
+      await stake(
+        governance,
+        voteToken,
+        proposer,
+        amount
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        proposer
+      )
+      // voter stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        amount
       )
       // vote against
       await governance.voteAgainst(
         proposalId,
-        {from: executor}
+        {from: voter}
       )
       // evaluate
       const proposalVoteAgainst = await governance.proposals.call(proposalId)
@@ -78,7 +161,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote for
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: voter}
       )
       // evaluate
       const proposalVoteFor = await governance.proposals.call(proposalId)
@@ -93,14 +176,21 @@ contract("BancorGovernance", async (accounts) => {
     })
 
     it("should fail to vote for an unknown proposal", async () => {
+      // voter stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        1
+      )
       await truffleAssert.fails(
         // vote against
         governance.voteFor(
           "0x1337",
-          {from: executor}
+          {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
-        "no such proposal"
+        "ERR_NO_PROPOSAL"
       )
     })
   })
