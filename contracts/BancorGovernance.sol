@@ -105,7 +105,7 @@ contract BancorGovernance is Owned
 
     mapping(address => uint256) private _balances;
     /* Modifications for proposals */
-    mapping(address => uint) public voteLocks; // period that your sake it locked to keep it for voting
+    mapping(address => uint) public voteLocks; // period that your stake it locked to keep it for voting
     /* votes of an address */
     mapping(address => uint) private votes;
     /* is address voter? */
