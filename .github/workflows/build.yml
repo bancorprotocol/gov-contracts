@@ -17,10 +17,15 @@ jobs:
           yarn install --check-files --cache-folder .ycache
           rm -rf .ycache
           npx ganache-cli@~6.10.2 > ganache-cli.log &
-      - name: Run tests
+      - name: Run Checks
         run: |
           yarn lint
+          yarn prettier
+      - name: Run tests
+        run: |
           yarn build
           yarn coverage
+      - name: Run migration
+        run: |
           yarn migrate
           git status
