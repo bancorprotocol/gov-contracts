@@ -42,58 +42,47 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./interfaces/IExecutor.sol";
 
-contract BancorGovernance is Owned
-{
+contract BancorGovernance is Owned {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     event NewProposal(
-        uint indexed id,
+        uint256 indexed id,
         address creator,
-        uint start,
-        uint duration,
+        uint256 start,
+        uint256 duration,
         address executor
     );
     event ProposalFinished(
-        uint indexed id,
-        uint _for,
-        uint _against,
+        uint256 indexed id,
+        uint256 _for,
+        uint256 _against,
         bool quorumReached
     );
     event Vote(
-        uint indexed id,
+        uint256 indexed id,
         address indexed voter,
         bool vote,
-        uint weight
+        uint256 weight
     );
-    event RevokeVoter(
-        address indexed voter,
-        uint votes,
-        uint totalVotes
-    );
-    event Staked(
-        address indexed user,
-        uint256 amount
-    );
-    event Withdrawn(
-        address indexed user,
-        uint256 amount
-    );
+    event RevokeVoter(address indexed voter, uint256 votes, uint256 totalVotes);
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
 
     struct Proposal {
-        uint id;
+        uint256 id;
         address proposer;
-        mapping(address => uint) forVotes;
-        mapping(address => uint) againstVotes;
-        uint totalForVotes;
-        uint totalAgainstVotes;
-        uint start; // block start;
-        uint end; // start + votePeriod
+        mapping(address => uint256) forVotes;
+        mapping(address => uint256) againstVotes;
+        uint256 totalForVotes;
+        uint256 totalAgainstVotes;
+        uint256 start; // block start;
+        uint256 end; // start + votePeriod
         address executor;
         string hash;
-        uint totalVotesAvailable;
-        uint quorum;
-        uint quorumRequired;
+        uint256 totalVotesAvailable;
+        uint256 quorum;
+        uint256 quorumRequired;
         bool open;
     }
 
@@ -105,9 +94,9 @@ contract BancorGovernance is Owned
 
     mapping(address => uint256) private _balances;
     /* Modifications for proposals */
-    mapping(address => uint) public voteLocks; // period that your stake it locked to keep it for voting
+    mapping(address => uint256) public voteLocks; // period that your stake it locked to keep it for voting
     /* votes of an address */
-    mapping(address => uint) private votes;
+    mapping(address => uint256) private votes;
     /* is address voter? */
     mapping(address => bool) public voters;
 
@@ -115,26 +104,22 @@ contract BancorGovernance is Owned
      * Proposal
      ***********************************/
     /* period that a proposal is open for voting */
-    uint public votePeriod = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
-    uint public voteLock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
-    uint public voteMinimum = 1e18;
-    uint public quorum = 2000;
-    uint public totalVotes;
+    uint256 public votePeriod = 17280; // voting period in blocks ~ 17280 3 days for 15s/block
+    uint256 public voteLock = 17280; // vote lock in blocks ~ 17280 3 days for 15s/block
+    uint256 public voteMinimum = 1e18;
+    uint256 public quorum = 2000;
+    uint256 public totalVotes;
     /* number of proposals */
-    uint public proposalCount;
+    uint256 public proposalCount;
 
-    mapping(uint => Proposal) public proposals;
+    mapping(uint256 => Proposal) public proposals;
 
     modifier onlyVoter() {
         require(voters[msg.sender] == true, "!voter");
         _;
     }
 
-    constructor(
-        address _voteTokenAddress
-    )
-        public
-    {
+    constructor(address _voteTokenAddress) public {
         voteToken = IERC20(_voteTokenAddress);
     }
 
@@ -145,43 +130,34 @@ contract BancorGovernance is Owned
      * @return _against
      * @return _quorum
      */
-    function getStats(
-        uint id
-    )
-        public view
-        returns (uint _for, uint _against, uint _quorum)
+    function getStats(uint256 id)
+        public
+        view
+        returns (
+            uint256 _for,
+            uint256 _against,
+            uint256 _quorum
+        )
     {
         _for = proposals[id].totalForVotes;
         _against = proposals[id].totalAgainstVotes;
 
-        uint _total = _for.add(_against);
+        uint256 _total = _for.add(_against);
         _for = _for.mul(10000).div(_total);
         _against = _against.mul(10000).div(_total);
 
         _quorum = _total.mul(10000).div(proposals[id].totalVotesAvailable);
     }
 
-    function votesOf(
-        address voter
-    )
-        public view
-        returns (uint)
-    {
+    function votesOf(address voter) public view returns (uint256) {
         return votes[voter];
     }
 
-    function balanceOf(
-        address account
-    )
-        public view
-        returns (uint256)
-    {
+    function balanceOf(address account) public view returns (uint256) {
         return _balances[account];
     }
 
-    function exit()
-        external
-    {
+    function exit() external {
         withdraw(balanceOf(msg.sender));
     }
 
@@ -189,39 +165,19 @@ contract BancorGovernance is Owned
      * @dev Set quorum needed for proposals to pass
      * @param _quorum The required quorum
      */
-    function setQuorum(
-        uint _quorum
-    )
-        public
-        ownerOnly
-    {
+    function setQuorum(uint256 _quorum) public ownerOnly {
         quorum = _quorum;
     }
 
-    function setVoteMinimum(
-        uint _voteMinimum
-    )
-        public
-        ownerOnly
-    {
+    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly {
         voteMinimum = _voteMinimum;
     }
 
-    function setVotePeriod(
-        uint _votePeriod
-    )
-        public
-        ownerOnly
-    {
+    function setVotePeriod(uint256 _votePeriod) public ownerOnly {
         votePeriod = _votePeriod;
     }
 
-    function setVoteLock(
-        uint _voteLock
-    )
-        public
-        ownerOnly
-    {
+    function setVoteLock(uint256 _voteLock) public ownerOnly {
         voteLock = _voteLock;
     }
 
@@ -230,29 +186,30 @@ contract BancorGovernance is Owned
      * @param executor The address of the contract to execute when the proposal passes
      * @param hash ????
      */
-    function propose(
-        address executor,
-        string memory hash
-    )
-        public
-    {
+    function propose(address executor, string memory hash) public {
         require(votesOf(msg.sender) > voteMinimum, "<voteMinimum");
         proposals[++proposalCount] = Proposal({
-            id : proposalCount,
-            proposer : msg.sender,
-            totalForVotes : 0,
-            totalAgainstVotes : 0,
-            start : block.number,
-            end : votePeriod.add(block.number),
-            executor : executor,
-            hash : hash,
-            totalVotesAvailable : totalVotes,
-            quorum : 0,
-            quorumRequired : quorum,
-            open : true
+            id: proposalCount,
+            proposer: msg.sender,
+            totalForVotes: 0,
+            totalAgainstVotes: 0,
+            start: block.number,
+            end: votePeriod.add(block.number),
+            executor: executor,
+            hash: hash,
+            totalVotesAvailable: totalVotes,
+            quorum: 0,
+            quorumRequired: quorum,
+            open: true
         });
 
-        emit NewProposal(proposalCount, msg.sender, block.number, votePeriod, executor);
+        emit NewProposal(
+            proposalCount,
+            msg.sender,
+            block.number,
+            votePeriod,
+            executor
+        );
         voteLocks[msg.sender] = voteLock.add(block.number);
     }
 
@@ -260,12 +217,8 @@ contract BancorGovernance is Owned
      * @dev Execute a proposal
      * @param id The id of the proposal to execute
      */
-    function execute(
-        uint id
-    )
-        public
-    {
-        (uint _for, uint _against, uint _quorum) = getStats(id);
+    function execute(uint256 id) public {
+        (uint256 _for, uint256 _against, uint256 _quorum) = getStats(id);
         require(proposals[id].quorumRequired < _quorum, "!quorum");
         require(proposals[id].end < block.number, "!end");
         if (proposals[id].open) {
@@ -274,15 +227,11 @@ contract BancorGovernance is Owned
         IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
     }
 
-    function tallyVotes(
-        uint id
-    )
-        public
-    {
+    function tallyVotes(uint256 id) public {
         require(proposals[id].open, "!open");
         require(proposals[id].end < block.number, "!end");
 
-        (uint _for, uint _against,) = getStats(id);
+        (uint256 _for, uint256 _against, ) = getStats(id);
         bool _quorum = false;
         if (proposals[id].quorum >= proposals[id].quorumRequired) {
             _quorum = true;
@@ -294,10 +243,7 @@ contract BancorGovernance is Owned
     /**
      * @dev Revoke votes
      */
-    function revoke()
-        public
-        onlyVoter
-    {
+    function revoke() public onlyVoter {
         voters[msg.sender] = false;
         if (totalVotes < votes[msg.sender]) {
             // edge case, should be impossible, but this is defi
@@ -313,29 +259,31 @@ contract BancorGovernance is Owned
      * @dev Vote for a proposal
      * @param id The id of the proposal to vote for
      */
-    function voteFor(
-        uint id
-    )
-        public
-    {
+    function voteFor(uint256 id) public {
         require(proposals[id].start > 0, "no such proposal");
         require(proposals[id].start < block.number, "<start");
         require(proposals[id].end > block.number, ">end");
 
         voters[msg.sender] = true;
 
-        uint _against = proposals[id].againstVotes[msg.sender];
+        uint256 _against = proposals[id].againstVotes[msg.sender];
         if (_against > 0) {
-            proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.sub(_against);
+            proposals[id].totalAgainstVotes = proposals[id]
+                .totalAgainstVotes
+                .sub(_against);
             proposals[id].againstVotes[msg.sender] = 0;
         }
 
-        uint vote = votesOf(msg.sender).sub(proposals[id].forVotes[msg.sender]);
+        uint256 vote = votesOf(msg.sender).sub(
+            proposals[id].forVotes[msg.sender]
+        );
         proposals[id].totalForVotes = proposals[id].totalForVotes.add(vote);
         proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
 
         proposals[id].totalVotesAvailable = totalVotes;
-        uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
+        uint256 _votes = proposals[id].totalForVotes.add(
+            proposals[id].totalAgainstVotes
+        );
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
 
         voteLocks[msg.sender] = voteLock.add(block.number);
@@ -347,29 +295,31 @@ contract BancorGovernance is Owned
      * @dev Vote against a proposal
      * @param id The id of the proposal to vote against
      */
-    function voteAgainst(
-        uint id
-    )
-        public
-    {
+    function voteAgainst(uint256 id) public {
         require(proposals[id].start > 0, "no such proposal");
         require(proposals[id].start < block.number, "<start");
         require(proposals[id].end > block.number, ">end");
 
         voters[msg.sender] = true;
 
-        uint _for = proposals[id].forVotes[msg.sender];
+        uint256 _for = proposals[id].forVotes[msg.sender];
         if (_for > 0) {
             proposals[id].totalForVotes = proposals[id].totalForVotes.sub(_for);
             proposals[id].forVotes[msg.sender] = 0;
         }
 
-        uint vote = votesOf(msg.sender).sub(proposals[id].againstVotes[msg.sender]);
-        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(vote);
+        uint256 vote = votesOf(msg.sender).sub(
+            proposals[id].againstVotes[msg.sender]
+        );
+        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(
+            vote
+        );
         proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
 
         proposals[id].totalVotesAvailable = totalVotes;
-        uint _votes = proposals[id].totalForVotes.add(proposals[id].totalAgainstVotes);
+        uint256 _votes = proposals[id].totalForVotes.add(
+            proposals[id].totalAgainstVotes
+        );
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
 
         voteLocks[msg.sender] = voteLock.add(block.number);
@@ -381,11 +331,7 @@ contract BancorGovernance is Owned
      * @dev Stake with vote tokens
      * @param amount The amount of vote tokens to stake
      */
-    function stake(
-        uint256 amount
-    )
-        public
-    {
+    function stake(uint256 amount) public {
         require(amount > 0, "Cannot stake 0");
 
         votes[msg.sender] = votes[msg.sender].add(amount);
@@ -401,11 +347,7 @@ contract BancorGovernance is Owned
      * @dev Withdraw staked vote tokens
      * @param amount The amount of vote tokens to withdraw
      */
-    function withdraw(
-        uint256 amount
-    )
-        public
-    {
+    function withdraw(uint256 amount) public {
         require(amount > 0, "Cannot withdraw 0");
 
         votes[msg.sender] = votes[msg.sender].sub(amount);
