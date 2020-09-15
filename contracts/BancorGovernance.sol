@@ -268,7 +268,7 @@ contract BancorGovernance is Owned
         (uint _for, uint _against, uint _quorum) = getStats(id);
         require(proposals[id].quorumRequired < _quorum, "!quorum");
         require(proposals[id].end < block.number, "!end");
-        if (proposals[id].open == true) {
+        if (proposals[id].open) {
             tallyVotes(id);
         }
         IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
@@ -279,7 +279,7 @@ contract BancorGovernance is Owned
     )
         public
     {
-        require(proposals[id].open == true, "!open");
+        require(proposals[id].open, "!open");
         require(proposals[id].end < block.number, "!end");
 
         (uint _for, uint _against,) = getStats(id);
