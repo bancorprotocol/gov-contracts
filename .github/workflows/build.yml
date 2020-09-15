@@ -28,4 +28,6 @@ jobs:
       - name: Run migration
         run: |
           yarn migrate
-          git status
+      - name: Run check git
+        run: |
+          git status --porcelain
