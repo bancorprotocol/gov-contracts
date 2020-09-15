@@ -15,7 +15,7 @@ export const stake = async (
   )
   // stake
   await governance.stake(
-    (amt).toString(),
+    amt.toString(),
     {from: executor}
   )
 }
@@ -25,7 +25,7 @@ export const propose = async (
   executor: string,
   contractToExecute: string = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
 ): Promise<string> => {
-  const proposalCount = (await governance.proposalCount.call()).toNumber()
+  const proposalCountBefore = (await governance.proposalCount.call()).toNumber()
 
   // propose
   const {logs} = await governance.propose(
@@ -36,7 +36,7 @@ export const propose = async (
 
   assert.strictEqual(
     logs[0].args.id.toString(),
-    (proposalCount + 1).toString()
+    (proposalCountBefore + 1).toString()
   )
 
   return logs[0].args.id.toString()

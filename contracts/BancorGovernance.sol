@@ -159,12 +159,52 @@ contract BancorGovernance is Owned {
         _;
     }
 
+    /**
+     * @notice Only allow to continue of proposal with given id is open
+     */
+    modifier proposalOpen(uint256 id) {
+        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
+        require(proposals[id].start < block.number, "ERR_NOT_STARTED");
+        require(proposals[id].end > block.number, "ERR_ENDED");
+        _;
+    }
+
+    /**
+     * @notice Only allow to continue of proposal with given id has ended
+     */
+    modifier proposalEnded(uint256 id) {
+        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
+        require(proposals[id].open, "ERR_NOT_OPEN");
+        require(proposals[id].end < block.number, "ERR_NOT_ENDED");
+        _;
+    }
+
     constructor(address _voteTokenAddress) public {
         voteToken = IERC20(_voteTokenAddress);
     }
 
     /**
-     * @notice Get the stats of a proposal
+     * @notice Helper method to calculate the quorum ratio of a proposal
+     * @return quorum ratio
+     */
+    function calculateQuorumRatio(uint256 id) internal view returns (uint256) {
+        // calculate overall votes
+        uint256 _votes = proposals[id].totalForVotes.add(
+            proposals[id].totalAgainstVotes
+        );
+
+        return _votes.mul(10000).div(totalVotes);
+    }
+
+    /**
+     * @notice Exit this contract and remove all the stake
+     */
+    function exit() external {
+        unstake(votesOf(msg.sender));
+    }
+
+    /**
+     * @notice Helper method to get the voting stats of a proposal
      * @param id The id of the proposal to get the stats of
      * @return _for For votes ratio
      * @return _against Against votes ratio
@@ -199,13 +239,6 @@ contract BancorGovernance is Owned {
      */
     function votesOf(address voter) public view returns (uint256) {
         return votes[voter];
-    }
-
-    /**
-     * @notice Exit this contract and remove all the stake
-     */
-    function exit() external {
-        unstake(votesOf(msg.sender));
     }
 
     /**
@@ -278,13 +311,11 @@ contract BancorGovernance is Owned {
      * @notice Execute a proposal
      * @param id The id of the proposal to execute
      */
-    function execute(uint256 id) public {
+    function execute(uint256 id) public proposalEnded(id) {
         // get voting info of proposal
         (uint256 _for, uint256 _against, uint256 _quorum) = getStats(id);
         // check proposal state
         require(proposals[id].quorumRequired < _quorum, "ERR_NO_QUORUM");
-        require(proposals[id].end < block.number, "ERR_NOT_ENDED");
-        require(proposals[id].open, "ERR_NOT_OPEN");
         // tally votes
         tallyVotes(id);
         // do execution on the contract to be executed
@@ -297,10 +328,7 @@ contract BancorGovernance is Owned {
      * @notice Tally votes of proposal with given id
      * @param id The id of the proposal to tally votes
      */
-    function tallyVotes(uint256 id) public {
-        require(proposals[id].open, "ERR_NOT_OPEN");
-        require(proposals[id].end < block.number, "ERR_NOT_ENDED");
-
+    function tallyVotes(uint256 id) public proposalEnded(id) {
         // get voting info of proposal
         (uint256 _for, uint256 _against, ) = getStats(id);
         // assume we have no quorum
@@ -334,11 +362,7 @@ contract BancorGovernance is Owned {
      * @notice Vote for a proposal
      * @param id The id of the proposal to vote for
      */
-    function voteFor(uint256 id) public onlyStaker {
-        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
-        require(proposals[id].start < block.number, "ERR_NOT_STARTED");
-        require(proposals[id].end > block.number, "ERR_ENDED");
-
+    function voteFor(uint256 id) public onlyStaker proposalOpen(id) {
         // mark sender as voter
         voters[msg.sender] = true;
 
@@ -363,12 +387,8 @@ contract BancorGovernance is Owned {
         proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
         proposals[id].totalVotesAvailable = totalVotes;
-        // calculate overall votes
-        uint256 _votes = proposals[id].totalForVotes.add(
-            proposals[id].totalAgainstVotes
-        );
         // recalculate quorum based on overall votes
-        proposals[id].quorum = _votes.mul(10000).div(totalVotes);
+        proposals[id].quorum = calculateQuorumRatio(id);
         // lock sender
         voteLocks[msg.sender] = voteLock.add(block.number);
         // emit vote event
@@ -379,11 +399,7 @@ contract BancorGovernance is Owned {
      * @notice Vote against a proposal
      * @param id The id of the proposal to vote against
      */
-    function voteAgainst(uint256 id) public onlyStaker {
-        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
-        require(proposals[id].start < block.number, "ERR_NOT_STARTED");
-        require(proposals[id].end > block.number, "ERR_ENDED");
-
+    function voteAgainst(uint256 id) public onlyStaker proposalOpen(id) {
         // mark sender as voter
         voters[msg.sender] = true;
 
@@ -407,12 +423,8 @@ contract BancorGovernance is Owned {
         proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
         proposals[id].totalVotesAvailable = totalVotes;
-        // calculate overall votes
-        uint256 _votes = proposals[id].totalForVotes.add(
-            proposals[id].totalAgainstVotes
-        );
         // recalculate quorum based on overall votes
-        proposals[id].quorum = _votes.mul(10000).div(totalVotes);
+        proposals[id].quorum = calculateQuorumRatio(id);
         // lock sender
         voteLocks[msg.sender] = voteLock.add(block.number);
         // emit vote event

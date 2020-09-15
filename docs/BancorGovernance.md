@@ -16,6 +16,18 @@ Only allow stakers to call methods flagged with this modifier
 
 
 
+### `proposalOpen(uint256 id)`
+
+Only allow to continue of proposal with given id is open
+
+
+
+### `proposalEnded(uint256 id)`
+
+Only allow to continue of proposal with given id has ended
+
+
+
 
 ### `constructor(address _voteTokenAddress)` (public)
 
@@ -23,9 +35,22 @@ Only allow stakers to call methods flagged with this modifier
 
 
 
+### `calculateQuorumRatio(uint256 id) → uint256` (internal)
+
+Helper method to calculate the quorum ratio of a proposal
+
+
+
+
+### `exit()` (external)
+
+Exit this contract and remove all the stake
+
+
+
 ### `getStats(uint256 id) → uint256 _for, uint256 _against, uint256 _quorum` (public)
 
-Get the stats of a proposal
+Helper method to get the voting stats of a proposal
 
 
 
@@ -34,12 +59,6 @@ Get the stats of a proposal
 
 Get the voting power of an address
 
-
-
-
-### `exit()` (external)
-
-Exit this contract and remove all the stake
 
 
 

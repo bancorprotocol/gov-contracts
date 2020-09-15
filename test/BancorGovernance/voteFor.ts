@@ -1,6 +1,7 @@
 import {propose, stake} from "./utils";
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
+import {mine, timeTravel} from "../timeTravel";
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
@@ -10,6 +11,7 @@ contract("BancorGovernance", async (accounts) => {
   let governance: any;
   let voteToken: any;
 
+  const owner = accounts[0]
   const proposer = accounts[2]
   const voter = accounts[3]
 
@@ -184,13 +186,52 @@ contract("BancorGovernance", async (accounts) => {
         1
       )
       await truffleAssert.fails(
-        // vote against
+        // vote for
         governance.voteFor(
           "0x1337",
           {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_NO_PROPOSAL"
+      )
+    })
+
+    it("should fail to vote for an expired proposal", async () => {
+      const amount = 2
+      // proposer stake
+      await stake(
+        governance,
+        voteToken,
+        proposer,
+        amount
+      )
+      await governance.setVotePeriod(
+        2,
+        {from: owner}
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        proposer
+      )
+      // voter stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        1
+      )
+      // mine two blocks
+      await mine(web3, 2)
+      // fail
+      await truffleAssert.fails(
+        // vote for
+        governance.voteFor(
+          proposalId,
+          {from: voter}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_ENDED"
       )
     })
   })

@@ -13,14 +13,20 @@ contract("BancorGovernance", async (accounts) => {
   let voteToken: any;
 
   const owner = accounts[0]
-  const executor = accounts[2]
+  const proposer = accounts[2]
+  const voter = accounts[2]
 
   before(async () => {
     voteToken = await TestToken.new()
 
-    // get the executor some tokens
+    // get the proposer some tokens
     await voteToken.mint(
-      executor,
+      proposer,
+      (100 * decimals).toString()
+    )
+    // get voter some tokens
+    await voteToken.mint(
+      proposer,
       (100 * decimals).toString()
     )
   })
@@ -37,12 +43,12 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
       // exit
       await governance.exit(
-        {from: executor}
+        {from: proposer}
       )
     })
 
@@ -51,28 +57,34 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
       )
       // reduce vote lock
       await governance.setVoteLock(
         2,
         {from: owner}
       )
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        1
+      )
       // vote
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: voter}
       )
       await mine(web3, 2)
       // exit
       await governance.exit(
-        {from: executor}
+        {from: voter}
       )
     })
 
@@ -81,23 +93,30 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
+      )
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        2
       )
       // vote
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: voter}
       )
       await truffleAssert.fails(
         // exit
         governance.exit(
-          {from: executor}
+          {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_LOCKED"

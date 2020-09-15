@@ -11,13 +11,16 @@ contract("BancorGovernance", async (accounts) => {
   let governance: any;
   let voteToken: any;
 
-  const executor = accounts[2]
+  const proposer = accounts[2]
+  const voter = accounts[3]
 
   before(async () => {
     voteToken = await TestToken.new()
 
-    // get the executor some tokens
-    await voteToken.mint(executor, (100 * decimals).toString())
+    // get the proposer some tokens
+    await voteToken.mint(proposer, (100 * decimals).toString())
+    // get the voter some tokens
+    await voteToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
@@ -29,17 +32,24 @@ contract("BancorGovernance", async (accounts) => {
   describe("#unstake()", async () => {
     it("should be able to unstake", async () => {
       const amount = 2
+
+      const votesBefore = (await governance.votesOf(voter)).toString()
+      assert.strictEqual(
+        votesBefore,
+        (0).toString()
+      )
+
       // stake
       await stake(
         governance,
         voteToken,
-        executor,
+        voter,
         amount
       )
       // unstake
       await governance.unstake(
         (amount * decimals).toString(),
-        {from: executor}
+        {from: voter}
       )
     })
 
@@ -49,24 +59,31 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         amount
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
+      )
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        amount
       )
       // vote for
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: voter}
       )
       await truffleAssert.fails(
         // unstake
         governance.unstake(
           (amount * decimals).toString(),
-          {from: executor}
+          {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_LOCKED"
@@ -78,7 +95,7 @@ contract("BancorGovernance", async (accounts) => {
         // unstake
         governance.unstake(
           (0).toString(),
-          {from: executor}
+          {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_UNSTAKE_ZERO"

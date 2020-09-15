@@ -11,13 +11,13 @@ contract("BancorGovernance", async (accounts) => {
   let governance: any;
   let voteToken: any;
 
-  const executor = accounts[2]
+  const voter = accounts[2]
 
   before(async () => {
     voteToken = await TestToken.new()
 
-    // get the executor some tokens
-    await voteToken.mint(executor, (100 * decimals).toString())
+    // get voter some tokens
+    await voteToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
@@ -28,12 +28,61 @@ contract("BancorGovernance", async (accounts) => {
 
   describe("#stake()", async () => {
     it("should be able to stake 2", async () => {
+      const amount = 2
+
+      const votesBefore = (await governance.votesOf(voter)).toString()
+      assert.strictEqual(
+        votesBefore,
+        (0).toString()
+      )
+
       await stake(
         governance,
         voteToken,
-        executor,
-        2
+        voter,
+        amount
       )
+
+      const votesAfter = (await governance.votesOf(voter)).toString()
+      assert.strictEqual(
+        votesAfter,
+        (amount * decimals).toString()
+      )
+    })
+
+    it("should be able to stake 2 times 2 and have 4", async () => {
+      const amount = 2
+
+      const votesBefore = (await governance.votesOf(voter)).toString()
+      assert.strictEqual(
+        votesBefore,
+        (0).toString()
+      )
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        amount
+      )
+
+      const votesAfter = (await governance.votesOf(voter)).toString()
+      assert.strictEqual(
+        votesAfter,
+        (amount * decimals).toString()
+      )
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        amount
+      )
+
+      const votesAfterSecond = (await governance.votesOf(voter)).toString()
+      assert.strictEqual(
+        votesAfterSecond,
+        (amount * 2 * decimals).toString()
+      )
+
     })
 
     it("should not be able to stake 0", async () => {
@@ -41,7 +90,7 @@ contract("BancorGovernance", async (accounts) => {
         // stake
         governance.stake(
           (0).toString(),
-          {from: executor}
+          {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_STAKE_ZERO"

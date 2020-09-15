@@ -10,14 +10,17 @@ contract("BancorGovernance", async (accounts) => {
   let governance: any;
   let voteToken: any;
 
-  const executor = accounts[2]
-  const someone = accounts[3]
+  const proposer = accounts[2]
+  const voter = accounts[3]
+  const someone = accounts[4]
 
   before(async () => {
     voteToken = await TestToken.new()
 
-    // get the executor some tokens
-    await voteToken.mint(executor, (100 * decimals).toString())
+    // get the proposer some tokens
+    await voteToken.mint(proposer, (100 * decimals).toString())
+    // get the voter some tokens
+    await voteToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
@@ -32,22 +35,29 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
+      )
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        2
       )
       // vote for
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: voter}
       )
       // revoke
       await governance.revoke(
-        {from: executor}
+        {from: voter}
       )
     })
 
@@ -56,28 +66,28 @@ contract("BancorGovernance", async (accounts) => {
       await stake(
         governance,
         voteToken,
-        executor,
+        proposer,
         2
       )
       // propose
       const proposalId = await propose(
         governance,
-        executor
+        proposer
       )
       // vote for
       await governance.voteFor(
         proposalId,
-        {from: executor}
+        {from: proposer}
       )
       // revoke
       await governance.revoke(
-        {from: executor}
+        {from: proposer}
       )
       // should not revoke twice
       await truffleAssert.fails(
         // revoke
         governance.revoke(
-          {from: executor}
+          {from: proposer}
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_NOT_VOTER"
