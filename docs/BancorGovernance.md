@@ -4,20 +4,20 @@
 
 
 
-### `updateReward(address account)`
-
-
-
-
-
 ### `onlyVoter()`
 
 
 
+Only allow voters to call methods flagged with this modifier
+
+### `onlyStaker()`
 
 
 
-### `constructor(address _rewardTokenAddress, address _voteTokenAddress)` (public)
+Only allow stakers to call methods flagged with this modifier
+
+
+### `constructor(address _voteTokenAddress)` (public)
 
 
 
@@ -34,63 +34,14 @@ Get the stats of a proposal
 
 
 
-
-
-### `lastTimeRewardApplicable() → uint256` (public)
-
-
-
-
-
-### `rewardPerToken() → uint256` (public)
-
-
-
-
-
-### `earned(address account) → uint256` (public)
-
-
-
-
-
-### `totalSupply() → uint256` (public)
-
-
-
-
-
-### `balanceOf(address account) → uint256` (public)
-
-
-
-
-
-### `seize(contract IERC20 _token, uint256 amount)` (external)
-
-
-
-Fee collection for any other token
-
-
-### `notifyRewardAmount(uint256 reward)` (external)
-
-
-
+Get the voting power of an address
 
 
 ### `exit()` (external)
 
 
 
-
-
-### `setBreaker(bool _breaker)` (public)
-
-
-
-Turn breaker on or off
-
+Exit this contract and remove all the stake
 
 ### `setQuorum(uint256 _quorum)` (public)
 
@@ -99,22 +50,25 @@ Turn breaker on or off
 Set quorum needed for proposals to pass
 
 
-### `setMinimum(uint256 _minimum)` (public)
+### `setVoteMinimum(uint256 _voteMinimum)` (public)
 
 
 
+Set required votes needed to propose
 
 
-### `setPeriod(uint256 _period)` (public)
-
-
-
-
-
-### `setLock(uint256 _lock)` (public)
+### `setVotePeriod(uint256 _votePeriod)` (public)
 
 
 
+Set period of proposals run
+
+
+### `setVoteLock(uint256 _voteLock)` (public)
+
+
+
+Set period tokens being locked after voting
 
 
 ### `propose(address executor, string hash)` (public)
@@ -135,6 +89,7 @@ Execute a proposal
 
 
 
+Tally votes of proposal with given id
 
 
 ### `revoke()` (public)
@@ -164,27 +119,15 @@ Vote against a proposal
 Stake with vote tokens
 
 
-### `withdraw(uint256 amount)` (public)
+### `unstake(uint256 amount)` (public)
 
 
 
-Withdraw staked vote tokens
-
-
-### `getReward()` (public)
-
-
-
+Unstake staked vote tokens
 
 
 
 ### `NewProposal(uint256 id, address creator, uint256 start, uint256 duration, address executor)`
-
-
-
-
-
-### `Vote(uint256 id, address voter, bool vote, uint256 weight)`
 
 
 
@@ -196,13 +139,19 @@ Withdraw staked vote tokens
 
 
 
+### `ProposalExecuted(uint256 id, address executor)`
+
+
+
+
+
+### `Vote(uint256 id, address voter, bool vote, uint256 weight)`
+
+
+
+
+
 ### `RevokeVoter(address voter, uint256 votes, uint256 totalVotes)`
-
-
-
-
-
-### `RewardAdded(uint256 reward)`
 
 
 
@@ -214,13 +163,7 @@ Withdraw staked vote tokens
 
 
 
-### `Withdrawn(address user, uint256 amount)`
-
-
-
-
-
-### `RewardPaid(address user, uint256 reward)`
+### `Unstaked(address user, uint256 amount)`
 
 
 

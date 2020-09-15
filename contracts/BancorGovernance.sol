@@ -59,6 +59,7 @@ contract BancorGovernance is Owned {
         uint256 _against,
         bool quorumReached
     );
+    event ProposalExecuted(uint256 indexed id, address executor);
     event Vote(
         uint256 indexed id,
         address indexed voter,
@@ -114,14 +115,20 @@ contract BancorGovernance is Owned {
     uint256 public totalVotes;
     /* number of proposals */
     uint256 public proposalCount;
-
+    /* the proposals */
     mapping(uint256 => Proposal) public proposals;
 
+    /**
+     * @dev Only allow voters to call methods flagged with this modifier
+     */
     modifier onlyVoter() {
         require(voters[msg.sender] == true, "ERR_NOT_VOTER");
         _;
     }
 
+    /**
+     * @dev Only allow stakers to call methods flagged with this modifier
+     */
     modifier onlyStaker() {
         require(votes[msg.sender] > 0, "ERR_NOT_STAKER");
         _;
@@ -134,9 +141,9 @@ contract BancorGovernance is Owned {
     /**
      * @dev Get the stats of a proposal
      * @param id The id of the proposal to get the stats of
-     * @return _for
-     * @return _against
-     * @return _quorum
+     * @return _for For votes ratio
+     * @return _against Against votes ratio
+     * @return _quorum Quorum ratio
      */
     function getStats(uint256 id)
         public
@@ -150,13 +157,21 @@ contract BancorGovernance is Owned {
         _for = proposals[id].totalForVotes;
         _against = proposals[id].totalAgainstVotes;
 
+        // calculate overall total votes
         uint256 _total = _for.add(_against);
-        _for = _for.mul(10000).div(_total);
-        _against = _against.mul(10000).div(_total);
 
+        // calculate for votes ratio
+        _for = _for.mul(10000).div(_total);
+        // calculate against votes ratio
+        _against = _against.mul(10000).div(_total);
+        // calculate quorum ratio
         _quorum = _total.mul(10000).div(proposals[id].totalVotesAvailable);
     }
 
+    /**
+     * @dev Get the voting power of an address
+     * @return votes of given address
+     */
     function votesOf(address voter) public view returns (uint256) {
         return votes[voter];
     }
@@ -176,14 +191,26 @@ contract BancorGovernance is Owned {
         quorum = _quorum;
     }
 
+    /**
+     * @dev Set required votes needed to propose
+     * @param _voteMinimum The required minimum votes
+     */
     function setVoteMinimum(uint256 _voteMinimum) public ownerOnly {
         voteMinimum = _voteMinimum;
     }
 
+    /**
+     * @dev Set period of proposals run
+     * @param _votePeriod The vote period
+     */
     function setVotePeriod(uint256 _votePeriod) public ownerOnly {
         votePeriod = _votePeriod;
     }
 
+    /**
+     * @dev Set period tokens being locked after voting
+     * @param _voteLock The vote lock
+     */
     function setVoteLock(uint256 _voteLock) public ownerOnly {
         voteLock = _voteLock;
     }
@@ -191,7 +218,7 @@ contract BancorGovernance is Owned {
     /**
      * @dev Create a new proposal
      * @param executor The address of the contract to execute when the proposal passes
-     * @param hash ????
+     * @param hash The ipfs hash holding the description of the proposal
      */
     function propose(address executor, string memory hash) public {
         require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
@@ -227,25 +254,39 @@ contract BancorGovernance is Owned {
      * @param id The id of the proposal to execute
      */
     function execute(uint256 id) public {
+        // get voting info of proposal
         (uint256 _for, uint256 _against, uint256 _quorum) = getStats(id);
+        // check proposal state
         require(proposals[id].quorumRequired < _quorum, "ERR_NO_QUORUM");
         require(proposals[id].end < block.number, "ERR_NOT_ENDED");
-        if (proposals[id].open) {
-            tallyVotes(id);
-        }
+        require(proposals[id].open, "ERR_NOT_OPEN");
+        // tally votes
+        tallyVotes(id);
+        // do execution on the contract to be executed
         IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
+        // emit proposal executed event
+        emit ProposalExecuted(id, proposals[id].executor);
     }
 
+    /**
+     * @dev Tally votes of proposal with given id
+     * @param id The id of the proposal to tally votes
+     */
     function tallyVotes(uint256 id) public {
         require(proposals[id].open, "ERR_NOT_OPEN");
         require(proposals[id].end < block.number, "ERR_NOT_ENDED");
 
+        // get voting info of proposal
         (uint256 _for, uint256 _against, ) = getStats(id);
+        // assume we have no quorum
         bool _quorum = false;
+        // do we have a quorum?
         if (proposals[id].quorum >= proposals[id].quorumRequired) {
             _quorum = true;
         }
+        // close proposal
         proposals[id].open = false;
+        // emit proposal finished event
         emit ProposalFinished(id, _for, _against, _quorum);
     }
 
@@ -276,9 +317,9 @@ contract BancorGovernance is Owned {
         // mark sender as voter
         voters[msg.sender] = true;
 
-        // get against votes for this voter
+        // get against votes for this sender
         uint256 _against = proposals[id].againstVotes[msg.sender];
-        // do we have against votes for this voter?
+        // do we have against votes for this sender?
         if (_against > 0) {
             // yes, remove the against votes first
             proposals[id].totalAgainstVotes = proposals[id]
@@ -293,7 +334,7 @@ contract BancorGovernance is Owned {
         );
         // increase total for votes of the proposal
         proposals[id].totalForVotes = proposals[id].totalForVotes.add(vote);
-        // set for votes to the votes of the voter
+        // set for votes to the votes of the sender
         proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
         proposals[id].totalVotesAvailable = totalVotes;
@@ -303,7 +344,7 @@ contract BancorGovernance is Owned {
         );
         // recalculate quorum based on overall votes
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
-        // lock voter
+        // lock sender
         voteLocks[msg.sender] = voteLock.add(block.number);
         // emit vote event
         emit Vote(id, msg.sender, true, vote);
@@ -321,30 +362,35 @@ contract BancorGovernance is Owned {
         // mark sender as voter
         voters[msg.sender] = true;
 
+        // get against votes for this sender
         uint256 _for = proposals[id].forVotes[msg.sender];
+        // do we have for votes for this sender?
         if (_for > 0) {
             proposals[id].totalForVotes = proposals[id].totalForVotes.sub(_for);
             proposals[id].forVotes[msg.sender] = 0;
         }
 
+        // calculate voting power in case voting against twice
         uint256 vote = votesOf(msg.sender).sub(
             proposals[id].againstVotes[msg.sender]
         );
+        // increase total against votes of the proposal
         proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(
             vote
         );
-        // set against votes to the votes of the voter
+        // set against votes to the votes of the sender
         proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
         proposals[id].totalVotesAvailable = totalVotes;
-
+        // calculate overall votes
         uint256 _votes = proposals[id].totalForVotes.add(
             proposals[id].totalAgainstVotes
         );
+        // recalculate quorum based on overall votes
         proposals[id].quorum = _votes.mul(10000).div(totalVotes);
-
+        // lock sender
         voteLocks[msg.sender] = voteLock.add(block.number);
-
+        // emit vote event
         emit Vote(id, msg.sender, false, vote);
     }
 
