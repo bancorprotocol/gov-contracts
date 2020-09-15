@@ -332,7 +332,7 @@ contract BancorGovernance is Owned {
      * @param amount The amount of vote tokens to stake
      */
     function stake(uint256 amount) public {
-        require(amount > 0, "Cannot stake 0");
+        require(amount > 0, "can't stake 0");
 
         votes[msg.sender] = votes[msg.sender].add(amount);
         totalVotes = totalVotes.add(amount);
@@ -348,7 +348,7 @@ contract BancorGovernance is Owned {
      * @param amount The amount of vote tokens to withdraw
      */
     function withdraw(uint256 amount) public {
-        require(amount > 0, "Cannot withdraw 0");
+        require(amount > 0, "can't withdraw 0");
 
         votes[msg.sender] = votes[msg.sender].sub(amount);
         totalVotes = totalVotes.sub(amount);
