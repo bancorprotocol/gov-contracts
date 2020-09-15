@@ -42,10 +42,17 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./interfaces/IExecutor.sol";
 
+/**
+ * @title The Bancor Governance Contract
+ * @author Bancor based on yearn.finance / synthetix
+ */
 contract BancorGovernance is Owned {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    /**
+     * @notice A new proposal was created
+     */
     event NewProposal(
         uint256 indexed id,
         address creator,
@@ -53,21 +60,39 @@ contract BancorGovernance is Owned {
         uint256 duration,
         address executor
     );
+    /**
+     * @notice A proposal has finished voting
+     */
     event ProposalFinished(
         uint256 indexed id,
         uint256 _for,
         uint256 _against,
         bool quorumReached
     );
+    /**
+     * @notice A proposal has been successfully executed
+     */
     event ProposalExecuted(uint256 indexed id, address executor);
+    /**
+     * @notice A vote has been placed on a proposal
+     */
     event Vote(
         uint256 indexed id,
         address indexed voter,
         bool vote,
         uint256 weight
     );
+    /**
+     * @notice A voter has revoked its votes
+     */
     event RevokeVoter(address indexed voter, uint256 votes, uint256 totalVotes);
+    /**
+     * @notice A stake has been added to the contract
+     */
     event Staked(address indexed user, uint256 amount);
+    /**
+     * @notice A stake has been removed from the contract
+     */
     event Unstaked(address indexed user, uint256 amount);
 
     struct Proposal {
@@ -119,7 +144,7 @@ contract BancorGovernance is Owned {
     mapping(uint256 => Proposal) public proposals;
 
     /**
-     * @dev Only allow voters to call methods flagged with this modifier
+     * @notice Only allow voters to call methods flagged with this modifier
      */
     modifier onlyVoter() {
         require(voters[msg.sender] == true, "ERR_NOT_VOTER");
@@ -127,7 +152,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Only allow stakers to call methods flagged with this modifier
+     * @notice Only allow stakers to call methods flagged with this modifier
      */
     modifier onlyStaker() {
         require(votes[msg.sender] > 0, "ERR_NOT_STAKER");
@@ -139,7 +164,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Get the stats of a proposal
+     * @notice Get the stats of a proposal
      * @param id The id of the proposal to get the stats of
      * @return _for For votes ratio
      * @return _against Against votes ratio
@@ -169,7 +194,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Get the voting power of an address
+     * @notice Get the voting power of an address
      * @return votes of given address
      */
     function votesOf(address voter) public view returns (uint256) {
@@ -177,14 +202,14 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Exit this contract and remove all the stake
+     * @notice Exit this contract and remove all the stake
      */
     function exit() external {
         unstake(votesOf(msg.sender));
     }
 
     /**
-     * @dev Set quorum needed for proposals to pass
+     * @notice Set quorum needed for proposals to pass
      * @param _quorum The required quorum
      */
     function setQuorum(uint256 _quorum) public ownerOnly {
@@ -192,7 +217,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Set required votes needed to propose
+     * @notice Set required votes needed to propose
      * @param _voteMinimum The required minimum votes
      */
     function setVoteMinimum(uint256 _voteMinimum) public ownerOnly {
@@ -200,7 +225,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Set period of proposals run
+     * @notice Set period of proposals run
      * @param _votePeriod The vote period
      */
     function setVotePeriod(uint256 _votePeriod) public ownerOnly {
@@ -208,7 +233,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Set period tokens being locked after voting
+     * @notice Set period tokens being locked after voting
      * @param _voteLock The vote lock
      */
     function setVoteLock(uint256 _voteLock) public ownerOnly {
@@ -216,7 +241,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Create a new proposal
+     * @notice Create a new proposal
      * @param executor The address of the contract to execute when the proposal passes
      * @param hash The ipfs hash holding the description of the proposal
      */
@@ -250,7 +275,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Execute a proposal
+     * @notice Execute a proposal
      * @param id The id of the proposal to execute
      */
     function execute(uint256 id) public {
@@ -269,7 +294,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Tally votes of proposal with given id
+     * @notice Tally votes of proposal with given id
      * @param id The id of the proposal to tally votes
      */
     function tallyVotes(uint256 id) public {
@@ -291,7 +316,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Revoke votes
+     * @notice Revoke votes
      */
     function revoke() public onlyVoter {
         voters[msg.sender] = false;
@@ -306,7 +331,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Vote for a proposal
+     * @notice Vote for a proposal
      * @param id The id of the proposal to vote for
      */
     function voteFor(uint256 id) public onlyStaker {
@@ -351,7 +376,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Vote against a proposal
+     * @notice Vote against a proposal
      * @param id The id of the proposal to vote against
      */
     function voteAgainst(uint256 id) public onlyStaker {
@@ -395,7 +420,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Stake with vote tokens
+     * @notice Stake with vote tokens
      * @param amount The amount of vote tokens to stake
      */
     function stake(uint256 amount) public {
@@ -412,7 +437,7 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @dev Unstake staked vote tokens
+     * @notice Unstake staked vote tokens
      * @param amount The amount of vote tokens to unstake
      */
     function unstake(uint256 amount) public {
