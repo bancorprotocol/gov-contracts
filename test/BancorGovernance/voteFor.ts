@@ -14,6 +14,7 @@ contract("BancorGovernance", async (accounts) => {
   const owner = accounts[0]
   const proposer = accounts[2]
   const voter = accounts[3]
+  const someone = accounts[9]
 
   before(async () => {
     voteToken = await TestToken.new()
@@ -193,6 +194,30 @@ contract("BancorGovernance", async (accounts) => {
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_NO_PROPOSAL"
+      )
+    })
+
+    it("should fail to vote for from someone", async () => {
+      // stake
+      await stake(
+        governance,
+        voteToken,
+        proposer,
+        2
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        proposer
+      )
+      await truffleAssert.fails(
+        // vote for
+        governance.voteFor(
+          proposalId,
+          {from: someone}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_NOT_STAKER"
       )
     })
 
