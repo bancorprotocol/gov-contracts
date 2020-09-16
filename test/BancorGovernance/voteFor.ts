@@ -259,5 +259,56 @@ contract("BancorGovernance", async (accounts) => {
         "ERR_ENDED"
       )
     })
+
+    it("should fail to vote for an ended proposal", async () => {
+      const amount = 2
+      const period = 2
+      // proposer stake
+      await stake(
+        governance,
+        voteToken,
+        proposer,
+        amount
+      )
+      // voter stake
+      await stake(
+        governance,
+        voteToken,
+        voter,
+        period
+      )
+      await governance.setVotePeriod(
+        2,
+        {from: owner}
+      )
+      // propose
+      const proposalId = await propose(
+        governance,
+        proposer
+      )
+      // vote for first
+      await governance.voteFor(
+        proposalId,
+        {from: voter}
+      )
+      // mine two blocks
+      await mine(web3, period)
+      // execute
+      await governance.execute(
+        proposalId,
+        {from: someone}
+      )
+      // fail
+      await truffleAssert.fails(
+        // vote for second
+        governance.voteFor(
+          proposalId,
+          {from: voter}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_NOT_OPEN"
+      )
+    })
+
   })
 })

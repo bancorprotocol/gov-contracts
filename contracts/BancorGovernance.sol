@@ -162,9 +162,12 @@ contract BancorGovernance is Owned {
     /**
      * @notice Only allow to continue of proposal with given id is open
      */
-    modifier proposalOpen(uint256 id) {
-        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
-        require(proposals[id].start < block.number, "ERR_NOT_STARTED");
+    modifier proposalNotEnded(uint256 id) {
+        require(
+            proposals[id].start > 0 && proposals[id].start < block.number,
+            "ERR_NO_PROPOSAL"
+        );
+        require(proposals[id].open, "ERR_NOT_OPEN");
         require(proposals[id].end > block.number, "ERR_ENDED");
         _;
     }
@@ -173,7 +176,10 @@ contract BancorGovernance is Owned {
      * @notice Only allow to continue of proposal with given id has ended
      */
     modifier proposalEnded(uint256 id) {
-        require(proposals[id].start > 0, "ERR_NO_PROPOSAL");
+        require(
+            proposals[id].start > 0 && proposals[id].start < block.number,
+            "ERR_NO_PROPOSAL"
+        );
         require(proposals[id].open, "ERR_NOT_OPEN");
         require(proposals[id].end < block.number, "ERR_NOT_ENDED");
         _;
@@ -362,7 +368,7 @@ contract BancorGovernance is Owned {
      * @notice Vote for a proposal
      * @param id The id of the proposal to vote for
      */
-    function voteFor(uint256 id) public onlyStaker proposalOpen(id) {
+    function voteFor(uint256 id) public onlyStaker proposalNotEnded(id) {
         // mark sender as voter
         voters[msg.sender] = true;
 
@@ -399,7 +405,7 @@ contract BancorGovernance is Owned {
      * @notice Vote against a proposal
      * @param id The id of the proposal to vote against
      */
-    function voteAgainst(uint256 id) public onlyStaker proposalOpen(id) {
+    function voteAgainst(uint256 id) public onlyStaker proposalNotEnded(id) {
         // mark sender as voter
         voters[msg.sender] = true;
 

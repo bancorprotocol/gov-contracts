@@ -82,7 +82,7 @@ contract("BancorGovernance", async (accounts) => {
       )
       // mine blocks
       await mine(web3, period)
-      // exit
+      // execute
       const {logs, blockNumber} = await governance.execute(
         proposalId,
         {from: executor}
