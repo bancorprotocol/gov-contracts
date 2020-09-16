@@ -1,7 +1,7 @@
-import {propose, stake} from "./utils";
+import { propose, stake } from "./utils";
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
-import {mine, timeTravel} from "../timeTravel";
+import { mine } from "../timeTravel";
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance");
@@ -263,22 +263,23 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to vote for an ended proposal", async () => {
       const amount = 2
       const period = 2
-      // proposer stake
+      // stake
       await stake(
         governance,
         voteToken,
         proposer,
         amount
       )
-      // voter stake
+      // stake
       await stake(
         governance,
         voteToken,
         voter,
-        period
+        amount
       )
+      // lower period so we dot have to mine 17k blocks
       await governance.setVotePeriod(
-        2,
+        period,
         {from: owner}
       )
       // propose
@@ -286,15 +287,15 @@ contract("BancorGovernance", async (accounts) => {
         governance,
         proposer
       )
-      // vote for first
+      // vote
       await governance.voteFor(
         proposalId,
         {from: voter}
       )
-      // mine two blocks
+      // mine blocks
       await mine(web3, period)
       // execute
-      await governance.execute(
+      await governance.tallyVotes(
         proposalId,
         {from: someone}
       )
