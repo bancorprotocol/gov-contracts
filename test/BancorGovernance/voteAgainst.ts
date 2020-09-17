@@ -99,11 +99,11 @@ contract("BancorGovernance", async (accounts) => {
       // evaluate
       const proposalVoteFor = await governance.proposals.call(proposalId)
       assert.strictEqual(
-        proposalVoteFor.totalForVotes.toString(),
+        proposalVoteFor.totalVotesFor.toString(),
         (amount * decimals).toString()
       )
       assert.strictEqual(
-        proposalVoteFor.totalAgainstVotes.toString(),
+        proposalVoteFor.totalVotesAgainst.toString(),
         (0).toString()
       )
       // vote against
@@ -114,11 +114,11 @@ contract("BancorGovernance", async (accounts) => {
       // evaluate
       const proposalVoteAgainst = await governance.proposals.call(proposalId)
       assert.strictEqual(
-        proposalVoteAgainst.totalForVotes.toString(),
+        proposalVoteAgainst.totalVotesFor.toString(),
         (0).toString()
       )
       assert.strictEqual(
-        proposalVoteAgainst.totalAgainstVotes.toString(),
+        proposalVoteAgainst.totalVotesAgainst.toString(),
         (amount * decimals).toString()
       )
     })

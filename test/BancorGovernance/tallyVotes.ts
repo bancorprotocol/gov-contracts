@@ -90,7 +90,7 @@ contract("BancorGovernance", async (accounts) => {
       )
       // and quorum reached
       assert.strictEqual(
-        logs[0].args.quorumReached,
+        logs[0].args._quorumReached,
         true
       )
     })
@@ -152,7 +152,7 @@ contract("BancorGovernance", async (accounts) => {
       )
       // and quorum failed to reach
       assert.strictEqual(
-        logs[0].args.quorumReached,
+        logs[0].args._quorumReached,
         false
       )
     })

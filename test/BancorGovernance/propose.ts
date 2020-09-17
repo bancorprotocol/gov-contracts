@@ -46,7 +46,7 @@ contract("BancorGovernance", async (accounts) => {
       )
 
       assert.strictEqual(
-        logs[0].args.id.toNumber(),
+        logs[0].args._id.toNumber(),
         proposalCount + 1
       )
     })

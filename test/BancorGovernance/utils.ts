@@ -35,9 +35,9 @@ export const propose = async (
   )
 
   assert.strictEqual(
-    logs[0].args.id.toString(),
+    logs[0].args._id.toString(),
     (proposalCountBefore + 1).toString()
   )
 
-  return logs[0].args.id.toString()
+  return logs[0].args._id.toString()
 }
