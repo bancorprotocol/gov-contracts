@@ -50,58 +50,13 @@ contract BancorGovernance is Owned {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    /**
-     * @notice A new proposal was created
-     */
-    event NewProposal(
-        uint256 indexed id,
-        address creator,
-        uint256 start,
-        uint256 duration,
-        address executor
-    );
-    /**
-     * @notice A proposal has finished voting
-     */
-    event ProposalFinished(
-        uint256 indexed id,
-        uint256 _for,
-        uint256 _against,
-        bool quorumReached
-    );
-    /**
-     * @notice A proposal has been successfully executed
-     */
-    event ProposalExecuted(uint256 indexed id, address executor);
-    /**
-     * @notice A vote has been placed on a proposal
-     */
-    event Vote(
-        uint256 indexed id,
-        address indexed voter,
-        bool vote,
-        uint256 weight
-    );
-    /**
-     * @notice A voter has revoked its votes
-     */
-    event RevokeVoter(address indexed voter, uint256 votes, uint256 totalVotes);
-    /**
-     * @notice A stake has been added to the contract
-     */
-    event Staked(address indexed user, uint256 amount);
-    /**
-     * @notice A stake has been removed from the contract
-     */
-    event Unstaked(address indexed user, uint256 amount);
-
     struct Proposal {
         uint256 id;
         address proposer;
-        mapping(address => uint256) forVotes;
-        mapping(address => uint256) againstVotes;
-        uint256 totalForVotes;
-        uint256 totalAgainstVotes;
+        mapping(address => uint256) votesFor;
+        mapping(address => uint256) votesAgainst;
+        uint256 totalVotesFor;
+        uint256 totalVotesAgainst;
         uint256 start; // block start;
         uint256 end; // start + votePeriod
         address executor;
@@ -112,47 +67,117 @@ contract BancorGovernance is Owned {
         bool open;
     }
 
-    /***********************************
-     * Vote
-     ***********************************/
-    /* vote token setup */
-    IERC20 public voteToken;
+    /**
+     * @notice triggered when a new proposal is created
+     *
+     * @param _id       proposal id
+     * @param _creator  proposal creator
+     * @param _start    voting start block
+     * @param _duration voting duration
+     * @param _executor contract that will exeecute the proposal once it passes
+     */
+    event NewProposal(
+        uint256 indexed _id,
+        address _creator,
+        uint256 _start,
+        uint256 _duration,
+        address _executor
+    );
 
-    /* period that your stake it locked to keep it for voting */
-    mapping(address => uint256) public voteLocks;
-    /* votes of an address */
-    mapping(address => uint256) private votes;
-    /* is address voter? */
-    mapping(address => bool) public voters;
+    /**
+     * @notice triggered when voting on a proposal has ended
+     *
+     * @param _id               proposal id
+     * @param _for              number of votes for the proposal
+     * @param _against          number of votes against the proposal
+     * @param _quorumReached    true if quorum was reached, false otherwise
+     */
+    event ProposalFinished(
+        uint256 indexed _id,
+        uint256 _for,
+        uint256 _against,
+        bool _quorumReached
+    );
 
-    /***********************************
-     * Proposal
-     ***********************************/
-    /* voting period in blocks ~ 17280 3 days for 15s/block */
+    /**
+     * @notice triggered when a proposal was successfully executed
+     *
+     * @param _id       proposal id
+     * @param _executor contract that will exeecute the proposal once it passes
+     */
+    event ProposalExecuted(uint256 indexed _id, address _executor);
+
+    /**
+     * @notice triggered when a stake has been added to the contract
+     *
+     * @param _user     staker address
+     * @param _amount   staked amount
+     */
+    event Staked(address indexed _user, uint256 _amount);
+
+    /**
+     * @notice triggered when a stake has been removed from the contract
+     *
+     * @param _user     staker address
+     * @param _amount   unstaked amount
+     */
+    event Unstaked(address indexed _user, uint256 _amount);
+
+    /**
+     * @notice triggered when a user votes on a proposal
+     *
+     * @param _id       proposal id
+     * @param _voter    voter addrerss
+     * @param _vote     true if the vote is for the proposal, false otherwise
+     * @param _weight   number of votes
+     */
+    event Vote(
+        uint256 indexed _id,
+        address indexed _voter,
+        bool _vote,
+        uint256 _weight
+    );
+
+    /**
+     * @notice triggered when voter has revoked its votes
+     *
+     * @param _voter        voter addrerss
+     * @param _votes        number of votes
+     * @param _totalVotes   global total number of votes
+     */
+    event RevokeVoter(address indexed _voter, uint256 _votes, uint256 _totalVotes);
+
+    // PROPOSALS
+
+    // voting period in blocks, 3 days = ~17280 for 15s/block
     uint256 public votePeriod = 17280;
-    /* vote lock in blocks ~ 17280 3 days for 15s/block */
+    // vote lock in blocks, 3 days = ~17280 for 15s/block
     uint256 public voteLock = 17280;
-    /* minimum stake required */
+    // minimum stake required
     uint256 public voteMinimum = 1e18;
-    /* quorum needed for a proposal to pass */
+    // quorum needed for a proposal to pass
     uint256 public quorum = 2000;
-    /* sum of current total votes */
+    // sum of current total votes
     uint256 public totalVotes;
-    /* number of proposals */
+    // number of proposals
     uint256 public proposalCount;
-    /* the proposals */
+    // proposals by id
     mapping(uint256 => Proposal) public proposals;
 
-    /**
-     * @notice Only allow voters to call methods flagged with this modifier
-     */
-    modifier onlyVoter() {
-        require(voters[msg.sender] == true, "ERR_NOT_VOTER");
-        _;
-    }
+    // VOTES
+    
+    // token used to represents votes
+    IERC20 public votingToken;
+
+    // lock period for each voter stake by voter address
+    mapping(address => uint256) public voteLocks;
+    // number of votes for each user
+    mapping(address => uint256) private votes;
+    // true for an address that belongs to a voter
+    mapping(address => bool) public voters;
 
     /**
-     * @notice Only allow stakers to call methods flagged with this modifier
+     * @notice allows execution by staker only
      */
     modifier onlyStaker() {
         require(votes[msg.sender] > 0, "ERR_NOT_STAKER");
@@ -160,63 +185,83 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @notice Only allow to continue of proposal with given id is open
+     * @notice allows execution by voter only
      */
-    modifier proposalNotEnded(uint256 id) {
-        require(
-            proposals[id].start > 0 && proposals[id].start < block.number,
-            "ERR_NO_PROPOSAL"
-        );
-        require(proposals[id].open, "ERR_NOT_OPEN");
-        require(proposals[id].end > block.number, "ERR_ENDED");
+    modifier onlyVoter() {
+        require(voters[msg.sender] == true, "ERR_NOT_VOTER");
         _;
     }
 
     /**
-     * @notice Only allow to continue of proposal with given id has ended
+     * @notice allows execution only when the proposal with given id is open
+     *
+     * @param _id   proposal id
      */
-    modifier proposalEnded(uint256 id) {
+    modifier proposalNotEnded(uint256 _id) {
         require(
-            proposals[id].start > 0 && proposals[id].start < block.number,
+            proposals[_id].start > 0 && proposals[_id].start < block.number,
             "ERR_NO_PROPOSAL"
         );
-        require(proposals[id].open, "ERR_NOT_OPEN");
-        require(proposals[id].end < block.number, "ERR_NOT_ENDED");
+        require(proposals[_id].open, "ERR_NOT_OPEN");
+        require(proposals[_id].end > block.number, "ERR_ENDED");
         _;
     }
 
-    constructor(address _voteTokenAddress) public {
-        voteToken = IERC20(_voteTokenAddress);
+    /**
+     * @notice allows execution only when the proposal with given id has ended
+     *
+     * @param _id   proposal id
+     */
+    modifier proposalEnded(uint256 _id) {
+        require(
+            proposals[_id].start > 0 && proposals[_id].start < block.number,
+            "ERR_NO_PROPOSAL"
+        );
+        require(proposals[_id].open, "ERR_NOT_OPEN");
+        require(proposals[_id].end < block.number, "ERR_NOT_ENDED");
+        _;
     }
 
     /**
-     * @notice Helper method to calculate the quorum ratio of a proposal
+     * @notice used to initialize a new Governance contract
+     *
+     ** @param _votingToken token used to represents votes
+     */
+    constructor(address _votingToken) public {
+        votingToken = IERC20(_votingToken);
+    }
+
+    /**
+     * @notice returns the quorum ratio of a proposal
+     *
+     * @param _id   proposal id
      * @return quorum ratio
      */
-    function calculateQuorumRatio(uint256 id) internal view returns (uint256) {
+    function calculateQuorumRatio(uint256 _id) internal view returns (uint256) {
         // calculate overall votes
-        uint256 _votes = proposals[id].totalForVotes.add(
-            proposals[id].totalAgainstVotes
+        uint256 _votes = proposals[_id].totalVotesFor.add(
+            proposals[_id].totalVotesAgainst
         );
 
         return _votes.mul(10000).div(totalVotes);
     }
 
     /**
-     * @notice Exit this contract and remove all the stake
+     * @notice removes the caller's entire stake
      */
     function exit() external {
         unstake(votesOf(msg.sender));
     }
 
     /**
-     * @notice Helper method to get the voting stats of a proposal
-     * @param id The id of the proposal to get the stats of
-     * @return _for For votes ratio
-     * @return _against Against votes ratio
-     * @return _quorum Quorum ratio
+     * @notice returns the voting stats of a proposal
+     *
+     * @param _id   proposal id
+     * @return _for votes for ratio
+     * @return _against votes against ratio
+     * @return _quorum quorum ratio
      */
-    function getStats(uint256 id)
+    function getStats(uint256 _id)
         public
         view
         returns (
@@ -225,132 +270,264 @@ contract BancorGovernance is Owned {
             uint256 _quorum
         )
     {
-        _for = proposals[id].totalForVotes;
-        _against = proposals[id].totalAgainstVotes;
+        _for = proposals[_id].totalVotesFor;
+        _against = proposals[_id].totalVotesAgainst;
 
         // calculate overall total votes
         uint256 _total = _for.add(_against);
-
         // calculate for votes ratio
         _for = _for.mul(10000).div(_total);
         // calculate against votes ratio
         _against = _against.mul(10000).div(_total);
         // calculate quorum ratio
-        _quorum = _total.mul(10000).div(proposals[id].totalVotesAvailable);
+        _quorum = _total.mul(10000).div(proposals[_id].totalVotesAvailable);
     }
 
     /**
-     * @notice Get the voting power of an address
+     * @notice returns the voting power of a given address
+     *
+     * @param _voter    voter address
      * @return votes of given address
      */
-    function votesOf(address voter) public view returns (uint256) {
-        return votes[voter];
+    function votesOf(address _voter) public view returns (uint256) {
+        return votes[_voter];
     }
 
     /**
-     * @notice Set quorum needed for proposals to pass
-     * @param _quorum The required quorum
+     * @notice updates the quorum needed for proposals to pass
+     *
+     * @param _quorum required quorum
      */
     function setQuorum(uint256 _quorum) public ownerOnly {
         quorum = _quorum;
     }
 
     /**
-     * @notice Set required votes needed to propose
-     * @param _voteMinimum The required minimum votes
+     * @notice updates the required votes needed to propose
+     *
+     * @param _voteMinimum required minimum votes
      */
     function setVoteMinimum(uint256 _voteMinimum) public ownerOnly {
         voteMinimum = _voteMinimum;
     }
 
     /**
-     * @notice Set period of proposals run
-     * @param _votePeriod The vote period
+     * @notice updates the period of proposals run
+     *
+     * @param _votePeriod vote period
      */
     function setVotePeriod(uint256 _votePeriod) public ownerOnly {
         votePeriod = _votePeriod;
     }
 
     /**
-     * @notice Set period tokens being locked after voting
-     * @param _voteLock The vote lock
+     * @notice updates the period tokens are locked after voting
+     *
+     * @param _voteLock vote lock
      */
     function setVoteLock(uint256 _voteLock) public ownerOnly {
         voteLock = _voteLock;
     }
 
     /**
-     * @notice Create a new proposal
-     * @param executor The address of the contract to execute when the proposal passes
-     * @param hash The ipfs hash holding the description of the proposal
+     * @notice creates a new proposal
+     *
+     * @param _executor the address of the contract that will execute the proposal after it passes
+     * @param _hash ipfs hash of the proposal description
      */
-    function propose(address executor, string memory hash) public {
+    function propose(address _executor, string memory _hash) public {
         require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
+
         // create new proposal
         proposals[++proposalCount] = Proposal({
             id: proposalCount,
             proposer: msg.sender,
-            totalForVotes: 0,
-            totalAgainstVotes: 0,
+            totalVotesFor: 0,
+            totalVotesAgainst: 0,
             start: block.number,
             end: votePeriod.add(block.number),
-            executor: executor,
-            hash: hash,
+            executor: _executor,
+            hash: _hash,
             totalVotesAvailable: totalVotes,
             quorum: 0,
             quorumRequired: quorum,
             open: true
         });
+
         // emit proposal event
         emit NewProposal(
             proposalCount,
             msg.sender,
             block.number,
             votePeriod,
-            executor
+            _executor
         );
         // lock proposer
         voteLocks[msg.sender] = voteLock.add(block.number);
     }
 
     /**
-     * @notice Execute a proposal
-     * @param id The id of the proposal to execute
+     * @notice executes a proposal
+     *
+     * @param _id id of the proposal to execute
      */
-    function execute(uint256 id) public proposalEnded(id) {
+    function execute(uint256 _id) public proposalEnded(_id) {
         // get voting info of proposal
-        (uint256 _for, uint256 _against, uint256 _quorum) = getStats(id);
+        (uint256 _for, uint256 _against, uint256 _quorum) = getStats(_id);
         // check proposal state
-        require(proposals[id].quorumRequired < _quorum, "ERR_NO_QUORUM");
+        require(proposals[_id].quorumRequired < _quorum, "ERR_NO_QUORUM");
+
         // tally votes
-        tallyVotes(id);
+        tallyVotes(_id);
         // do execution on the contract to be executed
-        IExecutor(proposals[id].executor).execute(id, _for, _against, _quorum);
+        IExecutor(proposals[_id].executor).execute(_id, _for, _against, _quorum);
+
         // emit proposal executed event
-        emit ProposalExecuted(id, proposals[id].executor);
+        emit ProposalExecuted(_id, proposals[_id].executor);
     }
 
     /**
-     * @notice Tally votes of proposal with given id
-     * @param id The id of the proposal to tally votes
+     * @notice tallies votes of proposal with given id
+     *
+     * @param _id id of the proposal to tally votes for
      */
-    function tallyVotes(uint256 id) public proposalEnded(id) {
+    function tallyVotes(uint256 _id) public proposalEnded(_id) {
         // get voting info of proposal
-        (uint256 _for, uint256 _against, ) = getStats(id);
+        (uint256 _for, uint256 _against, ) = getStats(_id);
         // assume we have no quorum
         bool _quorum = false;
         // do we have a quorum?
-        if (proposals[id].quorum >= proposals[id].quorumRequired) {
+        if (proposals[_id].quorum >= proposals[_id].quorumRequired) {
             _quorum = true;
         }
+
         // close proposal
-        proposals[id].open = false;
+        proposals[_id].open = false;
+
         // emit proposal finished event
-        emit ProposalFinished(id, _for, _against, _quorum);
+        emit ProposalFinished(_id, _for, _against, _quorum);
     }
 
     /**
-     * @notice Revoke votes
+     * @notice stakes vote tokens
+     *
+     * @param _amount amount of vote tokens to stake
+     */
+    function stake(uint256 _amount) public {
+        require(_amount > 0, "ERR_STAKE_ZERO");
+
+        // increase vote power
+        votes[msg.sender] = votesOf(msg.sender).add(_amount);
+        // increase total votes
+        totalVotes = totalVotes.add(_amount);
+        // transfer tokens to this contract
+        votingToken.safeTransferFrom(msg.sender, address(this), _amount);
+
+        // emit staked event
+        emit Staked(msg.sender, _amount);
+    }
+
+    /**
+     * @notice unstakes vote tokens
+     *
+     * @param _amount amount of vote tokens to unstake
+     */
+    function unstake(uint256 _amount) public {
+        require(_amount > 0, "ERR_UNSTAKE_ZERO");
+        require(voteLocks[msg.sender] < block.number, "ERR_LOCKED");
+
+        // reduce votes for user
+        votes[msg.sender] = votesOf(msg.sender).sub(_amount);
+        // reduce total votes
+        totalVotes = totalVotes.sub(_amount);
+        // transfer tokens back
+        votingToken.safeTransfer(msg.sender, _amount);
+
+        // emit unstaked event
+        emit Unstaked(msg.sender, _amount);
+    }
+
+    /**
+     * @notice votes for a proposal
+     *
+     * @param _id id of the proposal to vote for
+     */
+    function voteFor(uint256 _id) public onlyStaker proposalNotEnded(_id) {
+        // mark sender as voter
+        voters[msg.sender] = true;
+
+        // get against votes for this sender
+        uint256 _against = proposals[_id].votesAgainst[msg.sender];
+        // do we have against votes for this sender?
+        if (_against > 0) {
+            // yes, remove the against votes first
+            proposals[_id].totalVotesAgainst = proposals[_id]
+                .totalVotesAgainst
+                .sub(_against);
+            proposals[_id].votesAgainst[msg.sender] = 0;
+        }
+
+        // calculate voting power in case voting for twice
+        uint256 vote = votesOf(msg.sender).sub(
+            proposals[_id].votesFor[msg.sender]
+        );
+
+        // increase total for votes of the proposal
+        proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.add(vote);
+        // set for votes to the votes of the sender
+        proposals[_id].votesFor[msg.sender] = votesOf(msg.sender);
+        // update total votes available on the proposal
+        proposals[_id].totalVotesAvailable = totalVotes;
+        // recalculate quorum based on overall votes
+        proposals[_id].quorum = calculateQuorumRatio(_id);
+        // lock sender
+        voteLocks[msg.sender] = voteLock.add(block.number);
+
+        // emit vote event
+        emit Vote(_id, msg.sender, true, vote);
+    }
+
+    /**
+     * @notice votes against a proposal
+     *
+     * @param _id id of the proposal to vote against
+     */
+    function voteAgainst(uint256 _id) public onlyStaker proposalNotEnded(_id) {
+        // mark sender as voter
+        voters[msg.sender] = true;
+
+        // get against votes for this sender
+        uint256 _for = proposals[_id].votesFor[msg.sender];
+        // do we have for votes for this sender?
+        if (_for > 0) {
+            proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.sub(_for);
+            proposals[_id].votesFor[msg.sender] = 0;
+        }
+
+        // calculate voting power in case voting against twice
+        uint256 vote = votesOf(msg.sender).sub(
+            proposals[_id].votesAgainst[msg.sender]
+        );
+        // increase total against votes of the proposal
+        proposals[_id].totalVotesAgainst = proposals[_id].totalVotesAgainst.add(
+            vote
+        );
+
+        // set against votes to the votes of the sender
+        proposals[_id].votesAgainst[msg.sender] = votesOf(msg.sender);
+        // update total votes available on the proposal
+        proposals[_id].totalVotesAvailable = totalVotes;
+        // recalculate quorum based on overall votes
+        proposals[_id].quorum = calculateQuorumRatio(_id);
+        // lock sender
+        voteLocks[msg.sender] = voteLock.add(block.number);
+
+        // emit vote event
+        emit Vote(_id, msg.sender, false, vote);
+    }
+
+    /**
+     * @notice revokes votes
      */
     function revoke() public onlyVoter {
         voters[msg.sender] = false;
@@ -360,115 +537,9 @@ contract BancorGovernance is Owned {
         } else {
             totalVotes = totalVotes.sub(votes[msg.sender]);
         }
+
+        // emit vote revocation event
         emit RevokeVoter(msg.sender, votesOf(msg.sender), totalVotes);
         votes[msg.sender] = 0;
-    }
-
-    /**
-     * @notice Vote for a proposal
-     * @param id The id of the proposal to vote for
-     */
-    function voteFor(uint256 id) public onlyStaker proposalNotEnded(id) {
-        // mark sender as voter
-        voters[msg.sender] = true;
-
-        // get against votes for this sender
-        uint256 _against = proposals[id].againstVotes[msg.sender];
-        // do we have against votes for this sender?
-        if (_against > 0) {
-            // yes, remove the against votes first
-            proposals[id].totalAgainstVotes = proposals[id]
-                .totalAgainstVotes
-                .sub(_against);
-            proposals[id].againstVotes[msg.sender] = 0;
-        }
-
-        // calculate voting power in case voting for twice
-        uint256 vote = votesOf(msg.sender).sub(
-            proposals[id].forVotes[msg.sender]
-        );
-        // increase total for votes of the proposal
-        proposals[id].totalForVotes = proposals[id].totalForVotes.add(vote);
-        // set for votes to the votes of the sender
-        proposals[id].forVotes[msg.sender] = votesOf(msg.sender);
-        // update total votes available on the proposal
-        proposals[id].totalVotesAvailable = totalVotes;
-        // recalculate quorum based on overall votes
-        proposals[id].quorum = calculateQuorumRatio(id);
-        // lock sender
-        voteLocks[msg.sender] = voteLock.add(block.number);
-        // emit vote event
-        emit Vote(id, msg.sender, true, vote);
-    }
-
-    /**
-     * @notice Vote against a proposal
-     * @param id The id of the proposal to vote against
-     */
-    function voteAgainst(uint256 id) public onlyStaker proposalNotEnded(id) {
-        // mark sender as voter
-        voters[msg.sender] = true;
-
-        // get against votes for this sender
-        uint256 _for = proposals[id].forVotes[msg.sender];
-        // do we have for votes for this sender?
-        if (_for > 0) {
-            proposals[id].totalForVotes = proposals[id].totalForVotes.sub(_for);
-            proposals[id].forVotes[msg.sender] = 0;
-        }
-
-        // calculate voting power in case voting against twice
-        uint256 vote = votesOf(msg.sender).sub(
-            proposals[id].againstVotes[msg.sender]
-        );
-        // increase total against votes of the proposal
-        proposals[id].totalAgainstVotes = proposals[id].totalAgainstVotes.add(
-            vote
-        );
-        // set against votes to the votes of the sender
-        proposals[id].againstVotes[msg.sender] = votesOf(msg.sender);
-        // update total votes available on the proposal
-        proposals[id].totalVotesAvailable = totalVotes;
-        // recalculate quorum based on overall votes
-        proposals[id].quorum = calculateQuorumRatio(id);
-        // lock sender
-        voteLocks[msg.sender] = voteLock.add(block.number);
-        // emit vote event
-        emit Vote(id, msg.sender, false, vote);
-    }
-
-    /**
-     * @notice Stake with vote tokens
-     * @param amount The amount of vote tokens to stake
-     */
-    function stake(uint256 amount) public {
-        require(amount > 0, "ERR_STAKE_ZERO");
-
-        // increase vote power
-        votes[msg.sender] = votesOf(msg.sender).add(amount);
-        // increase total votes
-        totalVotes = totalVotes.add(amount);
-        // transfer tokens to this contract
-        voteToken.safeTransferFrom(msg.sender, address(this), amount);
-        // emit staked event
-        emit Staked(msg.sender, amount);
-    }
-
-    /**
-     * @notice Unstake staked vote tokens
-     * @param amount The amount of vote tokens to unstake
-     */
-    function unstake(uint256 amount) public {
-        require(amount > 0, "ERR_UNSTAKE_ZERO");
-        require(voteLocks[msg.sender] < block.number, "ERR_LOCKED");
-
-        // reduce votes for user
-        votes[msg.sender] = votesOf(msg.sender).sub(amount);
-        // reduce total votes
-        totalVotes = totalVotes.sub(amount);
-        // transfer tokens back
-        voteToken.safeTransfer(msg.sender, amount);
-        // emit unstaked event
-        emit Unstaked(msg.sender, amount);
     }
 }
