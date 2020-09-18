@@ -17,9 +17,8 @@
  * phrase from a file you've .gitignored so it doesn't accidentally become public.
  *
  */
-
+const ganache = require('ganache-core');
 require('ts-node/register')
-
 const HDWalletProvider = require('@truffle/hdwallet-provider')
 const MNEMONIC = 'YOUR WALLET KEY'
 const INFURA_TOKEN = 'YOUR_API_KEY'
@@ -43,9 +42,16 @@ module.exports = {
     // options below to some value.
     //
     development: {
-      host: '127.0.0.1',     // Localhost (default: none)
-      port: 8545,            // Standard Ethereum port (default: none)
-      network_id: '*',       // Any network (default: none)
+      host: 'localhost',
+      port: 7545,
+      network_id: '*',
+      gasPrice: 20000000000,
+      gas: 9500000,
+      provider: ganache.provider({
+        gasLimit: 9500000,
+        gasPrice: 20000000000,
+        default_balance_ether: 10000000000000000000
+      })
     },
     // Another network with more advanced options...
     // advanced: {
