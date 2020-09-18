@@ -14,7 +14,7 @@ jobs:
           node-version: '10.x'
       - name: Pre-install
         run: |
-          yarn install --check-files --cache-folder .ycache	          yarn install --check-files
+          yarn install --check-files --cache-folder .ycache
           rm -rf .ycache
       - name: Run Checks
         run: |
