@@ -44,7 +44,8 @@ import "./interfaces/IExecutor.sol";
 
 /**
  * @title The Bancor Governance Contract
- * @author Bancor based on yearn.finance / synthetix
+ *
+ * Big thanks to synthetix / yearn.finance for the initial version!
  */
 contract BancorGovernance is Owned {
     using SafeMath for uint256;
@@ -58,7 +59,7 @@ contract BancorGovernance is Owned {
         uint256 totalVotesFor;
         uint256 totalVotesAgainst;
         uint256 start; // block start;
-        uint256 end; // start + votePeriod
+        uint256 end; // start + voteDuration
         address executor;
         string hash;
         uint256 totalVotesAvailable;
@@ -145,12 +146,12 @@ contract BancorGovernance is Owned {
      * @param _votes        number of votes
      * @param _totalVotes   global total number of votes
      */
-    event RevokeVoter(address indexed _voter, uint256 _votes, uint256 _totalVotes);
+    event VotesRevoked(address indexed _voter, uint256 _votes, uint256 _totalVotes);
 
     // PROPOSALS
 
-    // voting period in blocks, 3 days = ~17280 for 15s/block
-    uint256 public votePeriod = 17280;
+    // voting duration in blocks, 3 days = ~17280 for 15s/block
+    uint256 public voteDuration = 17280;
     // vote lock in blocks, 3 days = ~17280 for 15s/block
     uint256 public voteLock = 17280;
     // minimum stake required
@@ -166,15 +167,24 @@ contract BancorGovernance is Owned {
 
     // VOTES
     
-    // token used to represents votes
-    IERC20 public votingToken;
+    // governance token used for votes
+    IERC20 public immutable govToken;
 
-    // lock period for each voter stake by voter address
+    // lock duration for each voter stake by voter address
     mapping(address => uint256) public voteLocks;
     // number of votes for each user
     mapping(address => uint256) private votes;
     // true for an address that belongs to a voter
     mapping(address => bool) public voters;
+
+    /**
+     * @notice used to initialize a new BancorGovernance contract
+     *
+     * @param _govToken token used to represents votes
+     */
+    constructor(IERC20 _govToken) public {
+        govToken = _govToken;
+    }
 
     /**
      * @notice allows execution by staker only
@@ -223,15 +233,6 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @notice used to initialize a new Governance contract
-     *
-     ** @param _votingToken token used to represents votes
-     */
-    constructor(address _votingToken) public {
-        votingToken = IERC20(_votingToken);
-    }
-
-    /**
      * @notice returns the quorum ratio of a proposal
      *
      * @param _id   proposal id
@@ -239,11 +240,11 @@ contract BancorGovernance is Owned {
      */
     function calculateQuorumRatio(uint256 _id) internal view returns (uint256) {
         // calculate overall votes
-        uint256 _votes = proposals[_id].totalVotesFor.add(
+        uint256 totalProposalVotes = proposals[_id].totalVotesFor.add(
             proposals[_id].totalVotesAgainst
         );
 
-        return _votes.mul(10000).div(totalVotes);
+        return totalProposalVotes.mul(10000).div(totalVotes);
     }
 
     /**
@@ -257,30 +258,24 @@ contract BancorGovernance is Owned {
      * @notice returns the voting stats of a proposal
      *
      * @param _id   proposal id
-     * @return _for votes for ratio
-     * @return _against votes against ratio
-     * @return _quorum quorum ratio
+     * @return votes for ratio
+     * @return votes against ratio
+     * @return quorum ratio
      */
-    function getStats(uint256 _id)
-        public
-        view
-        returns (
-            uint256 _for,
-            uint256 _against,
-            uint256 _quorum
-        )
-    {
-        _for = proposals[_id].totalVotesFor;
-        _against = proposals[_id].totalVotesAgainst;
+    function proposalStats(uint256 _id) public view returns (uint256, uint256, uint256) {
+        uint256 forRatio = proposals[_id].totalVotesFor;
+        uint256 againstRatio = proposals[_id].totalVotesAgainst;
 
         // calculate overall total votes
-        uint256 _total = _for.add(_against);
+        uint256 totalProposalVotes = forRatio.add(againstRatio);
         // calculate for votes ratio
-        _for = _for.mul(10000).div(_total);
+        forRatio = forRatio.mul(10000).div(totalProposalVotes);
         // calculate against votes ratio
-        _against = _against.mul(10000).div(_total);
+        againstRatio = againstRatio.mul(10000).div(totalProposalVotes);
         // calculate quorum ratio
-        _quorum = _total.mul(10000).div(proposals[_id].totalVotesAvailable);
+        uint256 quorumRatio = totalProposalVotes.mul(10000).div(proposals[_id].totalVotesAvailable);
+
+        return (forRatio, againstRatio, quorumRatio);
     }
 
     /**
@@ -312,16 +307,16 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @notice updates the period of proposals run
+     * @notice updates the proposals voting duration
      *
-     * @param _votePeriod vote period
+     * @param _voteDuration vote duration
      */
-    function setVotePeriod(uint256 _votePeriod) public ownerOnly {
-        votePeriod = _votePeriod;
+    function setVoteDuration(uint256 _voteDuration) public ownerOnly {
+        voteDuration = _voteDuration;
     }
 
     /**
-     * @notice updates the period tokens are locked after voting
+     * @notice updates the post vote lock duration
      *
      * @param _voteLock vote lock
      */
@@ -345,7 +340,7 @@ contract BancorGovernance is Owned {
             totalVotesFor: 0,
             totalVotesAgainst: 0,
             start: block.number,
-            end: votePeriod.add(block.number),
+            end: voteDuration.add(block.number),
             executor: _executor,
             hash: _hash,
             totalVotesAvailable: totalVotes,
@@ -359,9 +354,10 @@ contract BancorGovernance is Owned {
             proposalCount,
             msg.sender,
             block.number,
-            votePeriod,
+            voteDuration,
             _executor
         );
+
         // lock proposer
         voteLocks[msg.sender] = voteLock.add(block.number);
     }
@@ -373,14 +369,14 @@ contract BancorGovernance is Owned {
      */
     function execute(uint256 _id) public proposalEnded(_id) {
         // get voting info of proposal
-        (uint256 _for, uint256 _against, uint256 _quorum) = getStats(_id);
+        (uint256 forRatio, uint256 againstRatio, uint256 quorumRatio) = proposalStats(_id);
         // check proposal state
-        require(proposals[_id].quorumRequired < _quorum, "ERR_NO_QUORUM");
+        require(proposals[_id].quorumRequired < quorumRatio, "ERR_NO_QUORUM");
 
         // tally votes
         tallyVotes(_id);
         // do execution on the contract to be executed
-        IExecutor(proposals[_id].executor).execute(_id, _for, _against, _quorum);
+        IExecutor(proposals[_id].executor).execute(_id, forRatio, againstRatio, quorumRatio);
 
         // emit proposal executed event
         emit ProposalExecuted(_id, proposals[_id].executor);
@@ -393,19 +389,19 @@ contract BancorGovernance is Owned {
      */
     function tallyVotes(uint256 _id) public proposalEnded(_id) {
         // get voting info of proposal
-        (uint256 _for, uint256 _against, ) = getStats(_id);
+        (uint256 forRatio, uint256 againstRatio,) = proposalStats(_id);
         // assume we have no quorum
-        bool _quorum = false;
+        bool quorumReached = false;
         // do we have a quorum?
         if (proposals[_id].quorum >= proposals[_id].quorumRequired) {
-            _quorum = true;
+            quorumReached = true;
         }
 
         // close proposal
         proposals[_id].open = false;
 
         // emit proposal finished event
-        emit ProposalFinished(_id, _for, _against, _quorum);
+        emit ProposalFinished(_id, forRatio, againstRatio,quorumReached);
     }
 
     /**
@@ -421,7 +417,7 @@ contract BancorGovernance is Owned {
         // increase total votes
         totalVotes = totalVotes.add(_amount);
         // transfer tokens to this contract
-        votingToken.safeTransferFrom(msg.sender, address(this), _amount);
+        govToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         // emit staked event
         emit Staked(msg.sender, _amount);
@@ -441,7 +437,7 @@ contract BancorGovernance is Owned {
         // reduce total votes
         totalVotes = totalVotes.sub(_amount);
         // transfer tokens back
-        votingToken.safeTransfer(msg.sender, _amount);
+        govToken.safeTransfer(msg.sender, _amount);
 
         // emit unstaked event
         emit Unstaked(msg.sender, _amount);
@@ -457,20 +453,16 @@ contract BancorGovernance is Owned {
         voters[msg.sender] = true;
 
         // get against votes for this sender
-        uint256 _against = proposals[_id].votesAgainst[msg.sender];
+        uint256 votesAgainst = proposals[_id].votesAgainst[msg.sender];
         // do we have against votes for this sender?
-        if (_against > 0) {
+        if (votesAgainst > 0) {
             // yes, remove the against votes first
-            proposals[_id].totalVotesAgainst = proposals[_id]
-                .totalVotesAgainst
-                .sub(_against);
+            proposals[_id].totalVotesAgainst = proposals[_id].totalVotesAgainst.sub(votesAgainst);
             proposals[_id].votesAgainst[msg.sender] = 0;
         }
 
         // calculate voting power in case voting for twice
-        uint256 vote = votesOf(msg.sender).sub(
-            proposals[_id].votesFor[msg.sender]
-        );
+        uint256 vote = votesOf(msg.sender).sub(proposals[_id].votesFor[msg.sender]);
 
         // increase total for votes of the proposal
         proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.add(vote);
@@ -497,21 +489,17 @@ contract BancorGovernance is Owned {
         voters[msg.sender] = true;
 
         // get against votes for this sender
-        uint256 _for = proposals[_id].votesFor[msg.sender];
+        uint256 votesFor = proposals[_id].votesFor[msg.sender];
         // do we have for votes for this sender?
-        if (_for > 0) {
-            proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.sub(_for);
+        if (votesFor > 0) {
+            proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.sub(votesFor);
             proposals[_id].votesFor[msg.sender] = 0;
         }
 
         // calculate voting power in case voting against twice
-        uint256 vote = votesOf(msg.sender).sub(
-            proposals[_id].votesAgainst[msg.sender]
-        );
+        uint256 vote = votesOf(msg.sender).sub(proposals[_id].votesAgainst[msg.sender]);
         // increase total against votes of the proposal
-        proposals[_id].totalVotesAgainst = proposals[_id].totalVotesAgainst.add(
-            vote
-        );
+        proposals[_id].totalVotesAgainst = proposals[_id].totalVotesAgainst.add(vote);
 
         // set against votes to the votes of the sender
         proposals[_id].votesAgainst[msg.sender] = votesOf(msg.sender);
@@ -529,17 +517,12 @@ contract BancorGovernance is Owned {
     /**
      * @notice revokes votes
      */
-    function revoke() public onlyVoter {
+    function revokeVotes() public onlyVoter {
         voters[msg.sender] = false;
-        if (totalVotes < votesOf(msg.sender)) {
-            // edge case, should be impossible, but this is defi
-            totalVotes = 0;
-        } else {
-            totalVotes = totalVotes.sub(votes[msg.sender]);
-        }
+        totalVotes = totalVotes.sub(votes[msg.sender]);
 
         // emit vote revocation event
-        emit RevokeVoter(msg.sender, votesOf(msg.sender), totalVotes);
+        emit VotesRevoked(msg.sender, votesOf(msg.sender), totalVotes);
         votes[msg.sender] = 0;
     }
 }

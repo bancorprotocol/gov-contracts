@@ -8,10 +8,10 @@ contract("BancorGovernance", async (accounts) => {
   const TestToken = artifacts.require("TestToken");
 
   const decimals = 1e18
-  const period = 5
+  const duration = 5
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const owner = accounts[0]
   const proposer = accounts[2]
@@ -20,20 +20,20 @@ contract("BancorGovernance", async (accounts) => {
   const someone = accounts[5]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
 
     // get the proposer some tokens
-    await voteToken.mint(
+    await govToken.mint(
       proposer,
       (100 * decimals).toString()
     )
 
     // get the voters some tokens
-    await voteToken.mint(
+    await govToken.mint(
       voter1,
       (100 * decimals).toString()
     )
-    await voteToken.mint(
+    await govToken.mint(
       voter2,
       (100 * decimals).toString()
     )
@@ -41,7 +41,7 @@ contract("BancorGovernance", async (accounts) => {
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 
@@ -50,20 +50,20 @@ contract("BancorGovernance", async (accounts) => {
       // proposer stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         2
       )
       // voter stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter1,
         2
       )
-      // lower period so we dot have to mine 17k blocks
-      await governance.setVotePeriod(
-        period,
+      // lower duration so we dot have to mine 17k blocks
+      await governance.setVoteDuration(
+        duration,
         {from: owner}
       )
       // propose
@@ -77,7 +77,7 @@ contract("BancorGovernance", async (accounts) => {
         {from: voter1}
       )
       // mine blocks
-      await mine(web3, period)
+      await mine(web3, duration)
       // tally votes
       const {logs} = await governance.tallyVotes(
         proposalId,
@@ -100,27 +100,27 @@ contract("BancorGovernance", async (accounts) => {
       // proposer stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         50
       )
       // voter1 stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter1,
         amount
       )
       // voter2 stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter2,
         amount
       )
-      // lower period so we dot have to mine 17k blocks
-      await governance.setVotePeriod(
-        period,
+      // lower duration so we dot have to mine 17k blocks
+      await governance.setVoteDuration(
+        duration,
         {from: owner}
       )
       // propose
@@ -139,7 +139,7 @@ contract("BancorGovernance", async (accounts) => {
         {from: voter2}
       )
       // mine blocks
-      await mine(web3, period)
+      await mine(web3, duration)
       // tally votes
       const {logs} = await governance.tallyVotes(
         proposalId,

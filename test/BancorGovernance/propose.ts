@@ -9,20 +9,20 @@ contract("BancorGovernance", async (accounts) => {
   const contractToExecute = "0x53F84dBC77640F9AB0e22ACD12294a2a5f529a8a"
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const proposer = accounts[2]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
 
     // get the proposer some tokens
-    await voteToken.mint(proposer, (100 * decimals).toString())
+    await govToken.mint(proposer, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 
@@ -31,7 +31,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         2
       )
@@ -55,7 +55,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         1
       )

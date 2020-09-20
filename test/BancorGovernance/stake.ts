@@ -9,20 +9,20 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const voter = accounts[2]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
 
     // get voter some tokens
-    await voteToken.mint(voter, (100 * decimals).toString())
+    await govToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 
@@ -38,7 +38,7 @@ contract("BancorGovernance", async (accounts) => {
 
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )
@@ -60,7 +60,7 @@ contract("BancorGovernance", async (accounts) => {
       )
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )
@@ -72,7 +72,7 @@ contract("BancorGovernance", async (accounts) => {
       )
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )

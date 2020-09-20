@@ -9,7 +9,7 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const owner = accounts[0]
   const proposer = accounts[2]
@@ -17,17 +17,17 @@ contract("BancorGovernance", async (accounts) => {
   const someone = accounts[9]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
 
     // get the executor some tokens
-    await voteToken.mint(proposer, (100 * decimals).toString())
+    await govToken.mint(proposer, (100 * decimals).toString())
     // get voter some tokens
-    await voteToken.mint(voter, (100 * decimals).toString())
+    await govToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 
@@ -36,7 +36,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         2
       )
@@ -57,7 +57,7 @@ contract("BancorGovernance", async (accounts) => {
       // proposer stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         amount
       )
@@ -69,7 +69,7 @@ contract("BancorGovernance", async (accounts) => {
       // voter stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )
@@ -85,7 +85,7 @@ contract("BancorGovernance", async (accounts) => {
       // proposer stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         amount
       )
@@ -97,7 +97,7 @@ contract("BancorGovernance", async (accounts) => {
       // voter stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )
@@ -130,7 +130,7 @@ contract("BancorGovernance", async (accounts) => {
       // proposer stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         amount
       )
@@ -142,7 +142,7 @@ contract("BancorGovernance", async (accounts) => {
       // voter stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )
@@ -182,7 +182,7 @@ contract("BancorGovernance", async (accounts) => {
       // voter stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         1
       )
@@ -201,7 +201,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         2
       )
@@ -226,11 +226,11 @@ contract("BancorGovernance", async (accounts) => {
       // proposer stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         amount
       )
-      await governance.setVotePeriod(
+      await governance.setVoteDuration(
         2,
         {from: owner}
       )
@@ -242,7 +242,7 @@ contract("BancorGovernance", async (accounts) => {
       // voter stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         1
       )
@@ -262,24 +262,24 @@ contract("BancorGovernance", async (accounts) => {
 
     it("should fail to vote for an ended proposal", async () => {
       const amount = 2
-      const period = 2
+      const duration = 2
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         amount
       )
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         amount
       )
-      // lower period so we dot have to mine 17k blocks
-      await governance.setVotePeriod(
-        period,
+      // lower duration so we dot have to mine 17k blocks
+      await governance.setVoteDuration(
+        duration,
         {from: owner}
       )
       // propose
@@ -293,7 +293,7 @@ contract("BancorGovernance", async (accounts) => {
         {from: voter}
       )
       // mine blocks
-      await mine(web3, period)
+      await mine(web3, duration)
       // execute
       await governance.tallyVotes(
         proposalId,

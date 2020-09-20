@@ -29,7 +29,7 @@ Only allow to continue of proposal with given id has ended
 
 
 
-### `constructor(address _voteTokenAddress)` (public)
+### `constructor(address _govTokenAddress)` (public)
 
 
 
@@ -48,7 +48,7 @@ Exit this contract and remove all the stake
 
 
 
-### `getStats(uint256 id) → uint256 _for, uint256 _against, uint256 _quorum` (public)
+### `proposalStats(uint256 id) → uint256 _for, uint256 _against, uint256 _quorum` (public)
 
 Helper method to get the voting stats of a proposal
 
@@ -76,16 +76,16 @@ Set required votes needed to propose
 
 
 
-### `setVotePeriod(uint256 _votePeriod)` (public)
+### `setVoteDuration(uint256 _voteDuration)` (public)
 
-Set period of proposals run
+Set duration of proposals run
 
 
 
 
 ### `setVoteLock(uint256 _voteLock)` (public)
 
-Set period tokens being locked after voting
+Set duration tokens being locked after voting
 
 
 
@@ -170,7 +170,7 @@ A vote has been placed on a proposal
 
 
 
-### `RevokeVoter(address voter, uint256 votes, uint256 totalVotes)`
+### `VotesRevoked(address voter, uint256 votes, uint256 totalVotes)`
 
 A voter has revoked its votes
 

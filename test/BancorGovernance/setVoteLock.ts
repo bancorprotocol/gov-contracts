@@ -8,18 +8,18 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const owner = accounts[0]
   const someone = accounts[5]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 

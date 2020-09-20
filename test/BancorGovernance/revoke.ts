@@ -8,24 +8,24 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const proposer = accounts[2]
   const voter = accounts[3]
   const someone = accounts[4]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
 
     // get the proposer some tokens
-    await voteToken.mint(proposer, (100 * decimals).toString())
+    await govToken.mint(proposer, (100 * decimals).toString())
     // get the voter some tokens
-    await voteToken.mint(voter, (100 * decimals).toString())
+    await govToken.mint(voter, (100 * decimals).toString())
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 
@@ -34,7 +34,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         2
       )
@@ -46,7 +46,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         voter,
         2
       )
@@ -56,7 +56,7 @@ contract("BancorGovernance", async (accounts) => {
         {from: voter}
       )
       // revoke
-      await governance.revoke(
+      await governance.revokeVotes(
         {from: voter}
       )
     })
@@ -65,7 +65,7 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(
         governance,
-        voteToken,
+        govToken,
         proposer,
         2
       )
@@ -80,13 +80,13 @@ contract("BancorGovernance", async (accounts) => {
         {from: proposer}
       )
       // revoke
-      await governance.revoke(
+      await governance.revokeVotes(
         {from: proposer}
       )
       // should not revoke twice
       await truffleAssert.fails(
         // revoke
-        governance.revoke(
+        governance.revokeVotes(
           {from: proposer}
         ),
         truffleAssert.ErrorType.REVERT,
@@ -97,7 +97,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should not be able to revoke if not voted", async () => {
       await truffleAssert.fails(
         // revoke
-        governance.revoke(
+        governance.revokeVotes(
           {from: someone}
         ),
         truffleAssert.ErrorType.REVERT,

@@ -8,46 +8,46 @@ contract("BancorGovernance", async (accounts) => {
   const decimals = 1e18
 
   let governance: any;
-  let voteToken: any;
+  let govToken: any;
 
   const owner = accounts[0]
   const someone = accounts[5]
 
   before(async () => {
-    voteToken = await TestToken.new()
+    govToken = await TestToken.new()
   })
 
   beforeEach(async () => {
     governance = await BancorGovernance.new(
-      voteToken.address
+      govToken.address
     );
   })
 
-  describe("#setVotePeriod()", async () => {
+  describe("#setVoteDuration()", async () => {
     it("should set vote lock from owner", async () => {
-      const votePeriodBefore = await governance.votePeriod.call()
+      const voteDurationBefore = await governance.voteDuration.call()
       assert.strictEqual(
         (17280).toString(),
-        votePeriodBefore.toString()
+        voteDurationBefore.toString()
       )
 
-      const votePeriod = 5
-      await governance.setVotePeriod(
-        (votePeriod * decimals).toString(),
+      const voteDuration = 5
+      await governance.setVoteDuration(
+        (voteDuration * decimals).toString(),
         {from: owner}
       )
 
-      const votePeriodAfter = await governance.votePeriod.call()
+      const voteDurationAfter = await governance.voteDuration.call()
       assert.strictEqual(
-        (votePeriod * decimals).toString(),
-        votePeriodAfter.toString()
+        (voteDuration * decimals).toString(),
+        voteDurationAfter.toString()
       )
     })
 
     it("should fail to set vote lock from someone", async () => {
       await truffleAssert.fails(
-        // set vote period
-        governance.setVotePeriod(
+        // set vote duration
+        governance.setVoteDuration(
           (0).toString(),
           {from: someone}
         ),
