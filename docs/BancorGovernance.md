@@ -4,187 +4,211 @@
 
 
 
-### `onlyVoter()`
-
-Only allow voters to call methods flagged with this modifier
-
-
-
 ### `onlyStaker()`
 
-Only allow stakers to call methods flagged with this modifier
+allows execution by staker only
 
 
 
-### `proposalOpen(uint256 id)`
+### `onlyVoter()`
 
-Only allow to continue of proposal with given id is open
-
-
-
-### `proposalEnded(uint256 id)`
-
-Only allow to continue of proposal with given id has ended
+allows execution by voter only
 
 
 
+### `proposalNotEnded(uint256 _id)`
 
-### `constructor(address _govTokenAddress)` (public)
+allows execution only when the proposal with given id is open
 
 
 
 
+### `proposalEnded(uint256 _id)`
 
-### `calculateQuorumRatio(uint256 id) → uint256` (internal)
+allows execution only when the proposal with given id has ended
 
-Helper method to calculate the quorum ratio of a proposal
+
+
+
+
+### `constructor(contract IERC20 _govToken)` (public)
+
+used to initialize a new BancorGovernance contract
+
+
+
+
+### `calculateQuorumRatio(uint256 _id) → uint256` (internal)
+
+returns the quorum ratio of a proposal
 
 
 
 
 ### `exit()` (external)
 
-Exit this contract and remove all the stake
+removes the caller's entire stake
 
 
 
-### `proposalStats(uint256 id) → uint256 _for, uint256 _against, uint256 _quorum` (public)
+### `proposalStats(uint256 _id) → uint256, uint256, uint256` (public)
 
-Helper method to get the voting stats of a proposal
-
-
+returns the voting stats of a proposal
 
 
-### `votesOf(address voter) → uint256` (public)
 
-Get the voting power of an address
+
+### `votesOf(address _voter) → uint256` (public)
+
+returns the voting power of a given address
+
+
+
+
+### `votesAgainstOf(uint256 _id, address _voter) → uint256` (public)
+
+returns the voting power of a given address against a given proposal
+
+
+
+
+### `votesForOf(uint256 _id, address _voter) → uint256` (public)
+
+returns the voting power of a given address for a given proposal
 
 
 
 
 ### `setQuorum(uint256 _quorum)` (public)
 
-Set quorum needed for proposals to pass
+updates the quorum needed for proposals to pass
 
 
 
 
 ### `setVoteMinimum(uint256 _voteMinimum)` (public)
 
-Set required votes needed to propose
+updates the required votes needed to propose
 
 
 
 
 ### `setVoteDuration(uint256 _voteDuration)` (public)
 
-Set duration of proposals run
+updates the proposals voting duration
 
 
 
 
 ### `setVoteLock(uint256 _voteLock)` (public)
 
-Set duration tokens being locked after voting
+updates the post vote lock duration
 
 
 
 
-### `propose(address executor, string hash)` (public)
+### `propose(address _executor, string _hash)` (public)
 
-Create a new proposal
+creates a new proposal
 
 
 
 
-### `execute(uint256 id)` (public)
+### `execute(uint256 _id)` (public)
 
-Execute a proposal
+executes a proposal
 
 
 
 
-### `tallyVotes(uint256 id)` (public)
+### `tallyVotes(uint256 _id)` (public)
 
-Tally votes of proposal with given id
+tallies votes of proposal with given id
 
 
 
 
-### `revoke()` (public)
+### `stake(uint256 _amount)` (public)
 
-Revoke votes
+stakes vote tokens
 
 
 
-### `voteFor(uint256 id)` (public)
 
-Vote for a proposal
+### `unstake(uint256 _amount)` (public)
 
+unstakes vote tokens
 
 
 
-### `voteAgainst(uint256 id)` (public)
 
-Vote against a proposal
+### `voteFor(uint256 _id)` (public)
 
+votes for a proposal
 
 
 
-### `stake(uint256 amount)` (public)
 
-Stake with vote tokens
+### `voteAgainst(uint256 _id)` (public)
 
+votes against a proposal
 
 
 
-### `unstake(uint256 amount)` (public)
 
-Unstake staked vote tokens
+### `revokeVotes()` (public)
 
+revokes votes
 
 
 
 
-### `NewProposal(uint256 id, address creator, uint256 start, uint256 duration, address executor)`
+### `NewProposal(uint256 _id, address _creator, uint256 _start, uint256 _duration, address _executor)`
 
-A new proposal was created
+triggered when a new proposal is created
 
 
 
-### `ProposalFinished(uint256 id, uint256 _for, uint256 _against, bool quorumReached)`
 
-A proposal has finished voting
+### `ProposalFinished(uint256 _id, uint256 _for, uint256 _against, bool _quorumReached)`
 
+triggered when voting on a proposal has ended
 
 
-### `ProposalExecuted(uint256 id, address executor)`
 
-A proposal has been successfully executed
 
+### `ProposalExecuted(uint256 _id, address _executor)`
 
+triggered when a proposal was successfully executed
 
-### `Vote(uint256 id, address voter, bool vote, uint256 weight)`
 
-A vote has been placed on a proposal
 
 
+### `Staked(address _user, uint256 _amount)`
 
-### `VotesRevoked(address voter, uint256 votes, uint256 totalVotes)`
+triggered when a stake has been added to the contract
 
-A voter has revoked its votes
 
 
 
-### `Staked(address user, uint256 amount)`
+### `Unstaked(address _user, uint256 _amount)`
 
-A stake has been added to the contract
+triggered when a stake has been removed from the contract
 
 
 
-### `Unstaked(address user, uint256 amount)`
 
-A stake has been removed from the contract
+### `Vote(uint256 _id, address _voter, bool _vote, uint256 _weight)`
+
+triggered when a user votes on a proposal
+
+
+
+
+### `VotesRevoked(address _voter, uint256 _votes, uint256 _totalVotes)`
+
+triggered when voter has revoked its votes
+
 
 
 

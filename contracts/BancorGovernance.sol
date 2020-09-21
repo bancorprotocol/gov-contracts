@@ -289,6 +289,28 @@ contract BancorGovernance is Owned {
     }
 
     /**
+     * @notice returns the voting power of a given address against a given proposal
+     *
+     * @param _id       proposal id
+     * @param _voter    voter address
+     * @return votes of given address against given proposal
+     */
+    function votesAgainstOf(uint256 _id, address _voter) public view returns (uint256) {
+        return proposals[_id].votesAgainst[_voter];
+    }
+
+    /**
+    * @notice returns the voting power of a given address for a given proposal
+    *
+    * @param _id       proposal id
+    * @param _voter    voter address
+    * @return votes of given address for given proposal
+    */
+    function votesForOf(uint256 _id, address _voter) public view returns (uint256) {
+        return proposals[_id].votesFor[_voter];
+    }
+
+    /**
      * @notice updates the quorum needed for proposals to pass
      *
      * @param _quorum required quorum
