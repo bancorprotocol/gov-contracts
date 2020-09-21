@@ -65,14 +65,14 @@ returns the voting power of a given address
 
 
 
-### `votesAgainstOf(uint256 _id, address _voter) → uint256` (public)
+### `votesAgainstOf(address _voter, uint256 _id) → uint256` (public)
 
 returns the voting power of a given address against a given proposal
 
 
 
 
-### `votesForOf(uint256 _id, address _voter) → uint256` (public)
+### `votesForOf(address _voter, uint256 _id) → uint256` (public)
 
 returns the voting power of a given address for a given proposal
 
