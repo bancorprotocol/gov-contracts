@@ -21,8 +21,8 @@ Bancor Governance contracts
 
 | Contract                          | Address                                      | Comment                              |
 |-----------------------------------|----------------------------------------------|--------------------------------------|
-| BancorGovernance                  | `0xf648d3920188f79d045e35007ad1c3158d47732b` | Bancor Governance Contract           |
-| wETH                              | `0x0a180A76e4466bF68A7F86fB029BEd3cCcFaAac5` | Wrapped ETH configured as vote Token |
+| BancorGovernance                  | [`0x05AA3da21D2706681837a896433E62deEeEaB1f1`](https://ropsten.etherscan.io/address/0x05AA3da21D2706681837a896433E62deEeEaB1f1) | Bancor Governance Contract           |
+| wETH                              | [`0xc778417E063141139Fce010982780140Aa0cD5Ab`](https://ropsten.etherscan.io/address/0xc778417E063141139Fce010982780140Aa0cD5Ab) | Wrapped ETH configured as vote Token |
 
 ### Features
 - Updated to the latest version of Open Zeppelin contracts
