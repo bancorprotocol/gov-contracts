@@ -20,6 +20,7 @@
 const ganache = require('ganache-core');
 require('ts-node/register')
 const HDWalletProvider = require('@truffle/hdwallet-provider')
+
 const MNEMONIC = 'YOUR WALLET KEY'
 const INFURA_TOKEN = 'YOUR_API_KEY'
 
