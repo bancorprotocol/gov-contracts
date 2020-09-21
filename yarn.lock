@@ -61,9 +61,9 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@bancor/contracts-solidity@https://github.com/bancorprotocol/contracts-solidity.git#v0.6.15":
+"@bancor/contracts-solidity@git+https://github.com/bancorprotocol/contracts-solidity.git#v0.6.15":
   version "0.6.15"
-  resolved "https://github.com/bancorprotocol/contracts-solidity.git#5ecb90293b36d79cc4ed23dd1a057b8f5346cf1e"
+  resolved "git+https://github.com/bancorprotocol/contracts-solidity.git#5ecb90293b36d79cc4ed23dd1a057b8f5346cf1e"
 
 "@ethersproject/abi@5.0.0-beta.153":
   version "5.0.0-beta.153"
@@ -548,10 +548,10 @@
   resolved "https://registry.yarnpkg.com/@truffle/error/-/error-0.0.7.tgz#e9db39885575647ef08bf624b0c13fe46d41a209"
   integrity sha512-UIfVKsXSXocKnn5+RNklUXNoGd/JVj7V8KmC48TQzmjU33HQI86PX0JDS7SpHMHasI3w9X//1q7Lu7nZtj3Zzg==
 
-"@truffle/hdwallet-provider@^1.0.44":
-  version "1.0.44"
-  resolved "https://registry.yarnpkg.com/@truffle/hdwallet-provider/-/hdwallet-provider-1.0.44.tgz#4b61c49ae4d48cd438946aff74e92de83f951be4"
-  integrity sha512-pStsF5me3cxthf6dVjuQV08CzssUneURw9ZZCDknFZIq/kofWuk710VnmSIhDBcT2iSxGzemy0hIuP+3MG3fYQ==
+"@truffle/hdwallet-provider@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@truffle/hdwallet-provider/-/hdwallet-provider-1.1.0.tgz#caca30225ee18c69fdd6403b4de23ca316796922"
+  integrity sha512-hblrGs0w/S8Ij7BrmUju6GEK35NWQs2Hxc6SMBrz4chlwd9vcBzMWCGoCtYwYOi2d6o9jOv17+bLk9KNlTZR8g==
   dependencies:
     "@trufflesuite/web3-provider-engine" "15.0.13-1"
     "@types/web3" "^1.0.20"
@@ -8484,10 +8484,10 @@ truffle-typings@^1.0.8:
     "@types/mocha" "^5.2.5"
     "@types/web3" "^1.0.18"
 
-truffle@^5.1.43:
-  version "5.1.43"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.43.tgz#544e7b0955b6728a00761a86555c1eb259313266"
-  integrity sha512-KXda/70RAG9TBdQta8JEwVQmL9r/AZzU++5aZkrF4/nDosund8SV1yM9CcDTib4xLWuMaB15YyOC5r163QdLAw==
+truffle@^5.1.45:
+  version "5.1.45"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.45.tgz#a21c093dfcfb6e0a7dd039f626c2f831663f0780"
+  integrity sha512-0CZ2XXW4sgSGqIU7sIcU9O3dIJAAOaVZEhb/tWs6TfjLGzfSp4jBFJ398IHWaiQqY1eJaDK/rtX2Y1gQnlELOA==
   dependencies:
     app-module-path "^2.2.0"
     mocha "8.1.2"
