@@ -57,6 +57,56 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
+    it("should propose with proper id continuity", async () => {
+      // stake
+      await stake(
+        governance,
+        govToken,
+        proposer,
+        2
+      )
+
+      {
+        // propose
+        const {logs} = await governance.propose(
+          contractToExecute,
+          web3.utils.keccak256(contractToExecute),
+          { from: proposer }
+        )
+
+        assert.strictEqual(
+          logs[0].args._id.toNumber(),
+          0
+        )
+
+        const proposalCountAfter = (await governance.proposalCount.call()).toNumber()
+        assert.strictEqual(
+          proposalCountAfter,
+          1,
+        )
+      }
+
+      {
+        // propose
+        const { logs } = await governance.propose(
+          contractToExecute,
+          web3.utils.keccak256(contractToExecute),
+          { from: proposer }
+        )
+
+        assert.strictEqual(
+          logs[0].args._id.toNumber(),
+          1
+        )
+
+        const proposalCountAfter = (await governance.proposalCount.call()).toNumber()
+        assert.strictEqual(
+          proposalCountAfter,
+          2,
+        )
+      }
+    })
+
     it("should not be able to propose if not staked min amount", async () => {
       // stake
       await stake(
@@ -71,7 +121,7 @@ contract("BancorGovernance", async (accounts) => {
         governance.propose(
           contractToExecute,
           web3.utils.keccak256(contractToExecute),
-          {from: proposer}
+          { from: proposer }
         ),
         truffleAssert.ErrorType.REVERT,
         "ERR_NOT_VOTE_MINIMUM"
