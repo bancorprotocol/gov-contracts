@@ -132,12 +132,7 @@ contract BancorGovernance is Owned {
      * @param _vote     true if the vote is for the proposal, false otherwise
      * @param _weight   number of votes
      */
-    event Vote(
-        uint256 indexed _id,
-        address indexed _voter,
-        bool _vote,
-        uint256 _weight
-    );
+    event Vote(uint256 indexed _id, address indexed _voter, bool _vote, uint256 _weight);
 
     /**
      * @notice triggered when voter has revoked its votes
@@ -166,7 +161,7 @@ contract BancorGovernance is Owned {
     mapping(uint256 => Proposal) public proposals;
 
     // VOTES
-    
+
     // governance token used for votes
     IERC20 public immutable govToken;
 
@@ -208,10 +203,7 @@ contract BancorGovernance is Owned {
      * @param _id   proposal id
      */
     modifier proposalNotEnded(uint256 _id) {
-        require(
-            proposals[_id].start > 0 && proposals[_id].start < block.number,
-            "ERR_NO_PROPOSAL"
-        );
+        require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
         require(proposals[_id].open, "ERR_NOT_OPEN");
         require(proposals[_id].end > block.number, "ERR_ENDED");
         _;
@@ -223,10 +215,7 @@ contract BancorGovernance is Owned {
      * @param _id   proposal id
      */
     modifier proposalEnded(uint256 _id) {
-        require(
-            proposals[_id].start > 0 && proposals[_id].start < block.number,
-            "ERR_NO_PROPOSAL"
-        );
+        require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
         require(proposals[_id].open, "ERR_NOT_OPEN");
         require(proposals[_id].end < block.number, "ERR_NOT_ENDED");
         _;
@@ -262,7 +251,15 @@ contract BancorGovernance is Owned {
      * @return votes against ratio
      * @return quorum ratio
      */
-    function proposalStats(uint256 _id) public view returns (uint256, uint256, uint256) {
+    function proposalStats(uint256 _id)
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         uint256 forRatio = proposals[_id].totalVotesFor;
         uint256 againstRatio = proposals[_id].totalVotesAgainst;
 
@@ -300,12 +297,12 @@ contract BancorGovernance is Owned {
     }
 
     /**
-    * @notice returns the voting power of a given address for a given proposal
-    *
-    * @param _id       proposal id
-    * @param _voter    voter address
-    * @return votes of given address for given proposal
-    */
+     * @notice returns the voting power of a given address for a given proposal
+     *
+     * @param _id       proposal id
+     * @param _voter    voter address
+     * @return votes of given address for given proposal
+     */
     function votesForOf(uint256 _id, address _voter) public view returns (uint256) {
         return proposals[_id].votesFor[_voter];
     }
@@ -372,13 +369,7 @@ contract BancorGovernance is Owned {
         });
 
         // emit proposal event
-        emit NewProposal(
-            proposalCount,
-            msg.sender,
-            block.number,
-            voteDuration,
-            _executor
-        );
+        emit NewProposal(proposalCount, msg.sender, block.number, voteDuration, _executor);
 
         // lock proposer
         voteLocks[msg.sender] = voteLock.add(block.number);
@@ -411,7 +402,7 @@ contract BancorGovernance is Owned {
      */
     function tallyVotes(uint256 _id) public proposalEnded(_id) {
         // get voting info of proposal
-        (uint256 forRatio, uint256 againstRatio,) = proposalStats(_id);
+        (uint256 forRatio, uint256 againstRatio, ) = proposalStats(_id);
         // assume we have no quorum
         bool quorumReached = false;
         // do we have a quorum?
@@ -423,7 +414,7 @@ contract BancorGovernance is Owned {
         proposals[_id].open = false;
 
         // emit proposal finished event
-        emit ProposalFinished(_id, forRatio, againstRatio,quorumReached);
+        emit ProposalFinished(_id, forRatio, againstRatio, quorumReached);
     }
 
     /**

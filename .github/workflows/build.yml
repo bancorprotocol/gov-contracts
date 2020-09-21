@@ -30,4 +30,4 @@ jobs:
           yarn migrate
       - name: Run check git
         run: |
-          git status --porcelain
+          git diff --quiet --exit-code --cached

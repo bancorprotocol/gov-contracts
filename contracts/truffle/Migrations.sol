@@ -8,10 +8,7 @@ contract Migrations {
 
     modifier restricted() {
         /* solhint-disable-next-line */
-        require(
-            msg.sender == owner,
-            "This function is restricted to the contract's owner"
-        );
+        require(msg.sender == owner, "This function is restricted to the contract's owner");
         _;
     }
 
