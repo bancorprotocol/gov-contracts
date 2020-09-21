@@ -353,7 +353,7 @@ contract BancorGovernance is Owned {
         require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
 
         // create new proposal
-        proposals[++proposalCount] = Proposal({
+        proposals[proposalCount] = Proposal({
             id: proposalCount,
             proposer: msg.sender,
             totalVotesFor: 0,
@@ -373,6 +373,9 @@ contract BancorGovernance is Owned {
 
         // lock proposer
         voteLocks[msg.sender] = voteLock.add(block.number);
+
+        // increment proposal count so next proposal gets the next higher id
+        proposalCount++;
     }
 
     /**

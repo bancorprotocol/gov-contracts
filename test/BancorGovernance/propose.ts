@@ -36,7 +36,7 @@ contract("BancorGovernance", async (accounts) => {
         2
       )
 
-      const proposalCount = (await governance.proposalCount.call()).toNumber()
+      const proposalCountBefore = (await governance.proposalCount.call()).toNumber()
 
       // propose
       const {logs} = await governance.propose(
@@ -47,7 +47,13 @@ contract("BancorGovernance", async (accounts) => {
 
       assert.strictEqual(
         logs[0].args._id.toNumber(),
-        proposalCount + 1
+        proposalCountBefore
+      )
+
+      const proposalCountAfter = (await governance.proposalCount.call()).toNumber()
+      assert.strictEqual(
+        proposalCountAfter,
+        proposalCountBefore + 1,
       )
     })
 
