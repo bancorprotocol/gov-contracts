@@ -1,0 +1,44 @@
+strict digraph {
+  constructor
+  calculateQuorumRatio [color=gray]
+  exit
+  unstake
+  proposalStats [color=yellow]
+  votesOf [color=yellow]
+  votesAgainstOf [color=yellow]
+  votesForOf [color=yellow]
+  setQuorum
+  setVoteMinimum
+  setVoteDuration
+  setVoteLock
+  propose
+  NewProposal
+  execute
+  tallyVotes
+  ProposalExecuted
+  ProposalFinished
+  stake
+  safeTransferFrom
+  Staked
+  safeTransfer
+  Unstaked
+  voteFor
+  Vote
+  voteAgainst
+  revokeVotes
+  VotesRevoked
+  exit -> unstake
+  propose -> NewProposal
+  execute -> tallyVotes
+  execute -> execute
+  execute -> ProposalExecuted
+  tallyVotes -> ProposalFinished
+  stake -> safeTransferFrom
+  stake -> Staked
+  unstake -> safeTransfer
+  unstake -> Unstaked
+  voteFor -> Vote
+  voteAgainst -> Vote
+  revokeVotes -> VotesRevoked
+}
+
