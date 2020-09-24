@@ -1,0 +1,18 @@
+{
+  "payload": {
+    "body": "<markdown body>",
+    "choices": [
+      "For",
+      "Against"
+    ],
+    "start": 1599843600,
+    "end": 1600110000,
+    "metadata": {},
+    "name": "Whitelist liquidity pool xyz",
+    "snapshot": "10841820"
+  },
+  "timestamp": "1599844596",
+  "token": "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03",
+  "type": "proposal",
+  "version": "0.2.2"
+}
