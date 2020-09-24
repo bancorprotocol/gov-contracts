@@ -178,6 +178,8 @@ contract BancorGovernance is Owned {
      * @param _govToken token used to represents votes
      */
     constructor(IERC20 _govToken) public {
+        proposalCount = 0;
+        totalVotes = 0;
         govToken = _govToken;
     }
 
@@ -375,7 +377,7 @@ contract BancorGovernance is Owned {
         voteLocks[msg.sender] = voteLock.add(block.number);
 
         // increment proposal count so next proposal gets the next higher id
-        proposalCount++;
+        proposalCount = proposalCount.add(1);
     }
 
     /**
