@@ -143,6 +143,34 @@ contract BancorGovernance is Owned {
      */
     event VotesRevoked(address indexed _voter, uint256 _votes, uint256 _totalVotes);
 
+    /**
+     * @notice triggered when the quorum is changed
+     *
+     * @param _quorum       the new quorum
+     */
+    event QuorumChanged(uint256 _quorum);
+
+    /**
+     * @notice triggered when the vote minimum is changed
+     *
+     * @param _voteMinimum  the new vote minimum
+     */
+    event VoteMinimumChanged(uint256 _voteMinimum);
+
+    /**
+     * @notice triggered when the vote duration is changed
+     *
+     * @param _voteDuration the new vote duration
+     */
+    event VoteDurationChanged(uint256 _voteDuration);
+
+    /**
+     * @notice triggered when the vote lock is changed
+     *
+     * @param _voteLock     the new vote lock
+     */
+    event VoteLockChanged(uint256 _voteLock);
+
     // PROPOSALS
 
     // voting duration in blocks, 3 days = ~17280 for 15s/block
@@ -220,6 +248,16 @@ contract BancorGovernance is Owned {
         require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
         require(proposals[_id].open, "ERR_NOT_OPEN");
         require(proposals[_id].end < block.number, "ERR_NOT_ENDED");
+        _;
+    }
+
+    /**
+     * @notice verifies that a value is greater than zero
+     *
+     * @param _value    value to check for zero
+     */
+    modifier greaterThanZero(uint256 _value) {
+        require(_value > 0, "ERR_ZERO_VALUE");
         _;
     }
 
@@ -314,8 +352,9 @@ contract BancorGovernance is Owned {
      *
      * @param _quorum required quorum
      */
-    function setQuorum(uint256 _quorum) public ownerOnly {
+    function setQuorum(uint256 _quorum) public ownerOnly greaterThanZero(_quorum) {
         quorum = _quorum;
+        emit QuorumChanged(_quorum);
     }
 
     /**
@@ -323,8 +362,9 @@ contract BancorGovernance is Owned {
      *
      * @param _voteMinimum required minimum votes
      */
-    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly {
+    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly greaterThanZero(_voteMinimum) {
         voteMinimum = _voteMinimum;
+        emit VoteMinimumChanged(_voteMinimum);
     }
 
     /**
@@ -332,8 +372,13 @@ contract BancorGovernance is Owned {
      *
      * @param _voteDuration vote duration
      */
-    function setVoteDuration(uint256 _voteDuration) public ownerOnly {
+    function setVoteDuration(uint256 _voteDuration)
+        public
+        ownerOnly
+        greaterThanZero(_voteDuration)
+    {
         voteDuration = _voteDuration;
+        emit VoteDurationChanged(_voteDuration);
     }
 
     /**
@@ -341,8 +386,9 @@ contract BancorGovernance is Owned {
      *
      * @param _voteLock vote lock
      */
-    function setVoteLock(uint256 _voteLock) public ownerOnly {
+    function setVoteLock(uint256 _voteLock) public ownerOnly greaterThanZero(_voteLock) {
         voteLock = _voteLock;
+        emit VoteLockChanged(_voteLock);
     }
 
     /**
@@ -427,9 +473,7 @@ contract BancorGovernance is Owned {
      *
      * @param _amount amount of vote tokens to stake
      */
-    function stake(uint256 _amount) public {
-        require(_amount > 0, "ERR_STAKE_ZERO");
-
+    function stake(uint256 _amount) public greaterThanZero(_amount) {
         // increase vote power
         votes[msg.sender] = votesOf(msg.sender).add(_amount);
         // increase total votes
@@ -446,8 +490,7 @@ contract BancorGovernance is Owned {
      *
      * @param _amount amount of vote tokens to unstake
      */
-    function unstake(uint256 _amount) public {
-        require(_amount > 0, "ERR_UNSTAKE_ZERO");
+    function unstake(uint256 _amount) public greaterThanZero(_amount) {
         require(voteLocks[msg.sender] < block.number, "ERR_LOCKED");
 
         // reduce votes for user

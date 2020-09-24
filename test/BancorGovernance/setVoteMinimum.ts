@@ -44,6 +44,18 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
+    it("should fail to set minimum lock to 0", async () => {
+      await truffleAssert.fails(
+        // set vote minimum
+        governance.setVoteMinimum(
+          (0).toString(),
+          {from: owner}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_ZERO_VALUE"
+      )
+    })
+
     it("should fail to set vote minimum from someone", async () => {
       await truffleAssert.fails(
         // set vote minimum

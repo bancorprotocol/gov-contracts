@@ -44,6 +44,18 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
+    it("should fail to set quorum to 0", async () => {
+      await truffleAssert.fails(
+        // set quorum
+        governance.setQuorum(
+          (0).toString(),
+          {from: owner}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_ZERO_VALUE"
+      )
+    })
+
     it("should fail to set quorum from someone", async () => {
       await truffleAssert.fails(
         // set quorum

@@ -24,7 +24,7 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   describe("#setVoteDuration()", async () => {
-    it("should set vote lock from owner", async () => {
+    it("should set vote duration from owner", async () => {
       const voteDurationBefore = await governance.voteDuration.call()
       assert.strictEqual(
         (17280).toString(),
@@ -44,7 +44,19 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
-    it("should fail to set vote lock from someone", async () => {
+    it("should fail to set vote duration to 0", async () => {
+      await truffleAssert.fails(
+        // set vote duration
+        governance.setVoteDuration(
+          (0).toString(),
+          {from: owner}
+        ),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_ZERO_VALUE"
+      )
+    })
+
+    it("should fail to set vote duration from someone", async () => {
       await truffleAssert.fails(
         // set vote duration
         governance.setVoteDuration(

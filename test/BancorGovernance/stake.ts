@@ -93,7 +93,7 @@ contract("BancorGovernance", async (accounts) => {
           {from: voter}
         ),
         truffleAssert.ErrorType.REVERT,
-        "ERR_STAKE_ZERO"
+        "ERR_ZERO_VALUE"
       )
     })
   })
