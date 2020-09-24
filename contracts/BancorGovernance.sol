@@ -137,7 +137,7 @@ contract BancorGovernance is Owned {
     /**
      * @notice triggered when voter has revoked its votes
      *
-     * @param _voter        voter addrerss
+     * @param _voter        voter address
      * @param _votes        number of votes
      * @param _totalVotes   global total number of votes
      */
