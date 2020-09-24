@@ -574,16 +574,4 @@ contract BancorGovernance is Owned {
         // emit vote event
         emit Vote(_id, msg.sender, false, vote);
     }
-
-    /**
-     * @notice revokes votes
-     */
-    function revokeVotes() public onlyVoter {
-        voters[msg.sender] = false;
-        totalVotes = totalVotes.sub(votes[msg.sender]);
-
-        // emit vote revocation event
-        emit VotesRevoked(msg.sender, votesOf(msg.sender), totalVotes);
-        votes[msg.sender] = 0;
-    }
 }
