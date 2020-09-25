@@ -8,14 +8,18 @@ strict digraph {
   votesAgainstOf [color=yellow]
   votesForOf [color=yellow]
   setQuorum
+  QuorumChanged
   setVoteMinimum
+  VoteMinimumChanged
   setVoteDuration
+  VoteDurationChanged
   setVoteLock
+  VoteLockChanged
   propose
   NewProposal
   execute
-  tallyVotes
   ProposalExecuted
+  tallyVotes
   ProposalFinished
   stake
   safeTransferFrom
@@ -25,11 +29,12 @@ strict digraph {
   voteFor
   Vote
   voteAgainst
-  revokeVotes
-  VotesRevoked
   exit -> unstake
+  setQuorum -> QuorumChanged
+  setVoteMinimum -> VoteMinimumChanged
+  setVoteDuration -> VoteDurationChanged
+  setVoteLock -> VoteLockChanged
   propose -> NewProposal
-  execute -> tallyVotes
   execute -> execute
   execute -> ProposalExecuted
   tallyVotes -> ProposalFinished
@@ -39,6 +44,5 @@ strict digraph {
   unstake -> Unstaked
   voteFor -> Vote
   voteAgainst -> Vote
-  revokeVotes -> VotesRevoked
 }
 
