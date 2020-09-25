@@ -54,16 +54,18 @@ contract("BancorGovernance", async (accounts) => {
     })
 
     it("should be able to exit when the period has passed", async () => {
+      const period = 5
+      // reduce locks
+      await governance.setVoteDuration(period, {from: owner})
+      await governance.setVoteLock(period, {from: owner})
       // stake
       await stake(governance, govToken, proposer, 2)
       // propose
       const proposalId = await propose(governance, proposer)
-      // reduce vote lock
-      await governance.setVoteLock(2, {from: owner})
       await stake(governance, govToken, voter, 1)
       // vote
       await governance.voteFor(proposalId, {from: voter})
-      await mine(web3, 2)
+      await mine(web3, period)
       // exit
       await governance.exit({from: voter})
     })
