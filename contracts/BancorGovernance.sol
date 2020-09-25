@@ -221,14 +221,6 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @notice allows execution by voter only
-     */
-    modifier onlyVoter() {
-        require(voters[msg.sender] == true, "ERR_NOT_VOTER");
-        _;
-    }
-
-    /**
      * @notice allows execution only when the proposal with given id is open
      *
      * @param _id   proposal id
