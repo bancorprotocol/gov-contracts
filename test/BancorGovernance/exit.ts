@@ -30,9 +30,25 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   describe("#exit()", async () => {
-    it("should be able to exit when not voted", async () => {
+    it("should not be able to exit when not voted", async () => {
       // stake
       await stake(governance, govToken, proposer, 2)
+      // exit
+      await truffleAssert.fails(
+        // exit
+        governance.exit({from: proposer}),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_LOCKED"
+      )
+    })
+
+    it("should be able to exit when not voted after some time", async () => {
+      // lower the vote lock
+      await governance.setVoteLock(2, {from: owner})
+      // stake
+      await stake(governance, govToken, proposer, 2)
+      // let some time pass
+      await mine(web3, 2)
       // exit
       await governance.exit({from: proposer})
     })
