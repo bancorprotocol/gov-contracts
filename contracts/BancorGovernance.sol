@@ -488,7 +488,7 @@ contract BancorGovernance is Owned {
         govToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         // lock staker to avoid flashloans messing around with total votes
-        voteLocks[msg.sender] = voteLock.div(10).add(block.number);
+        voteLocks[msg.sender] = Math.max(voteLocks[msg.sender], voteLock.div(10).add(block.number));
 
         // emit staked event
         emit Staked(msg.sender, _amount);
