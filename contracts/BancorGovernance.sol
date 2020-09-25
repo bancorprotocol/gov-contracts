@@ -51,6 +51,8 @@ contract BancorGovernance is Owned {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
+    uint32 internal constant PPM_RESOLUTION = 1000000;
+
     struct Proposal {
         uint256 id;
         address proposer;
@@ -62,7 +64,7 @@ contract BancorGovernance is Owned {
         uint256 end; // start + voteDuration
         address executor;
         string hash;
-        uint256 totalVotesAvailable;
+        uint256 totalAvailableVotes;
         uint256 quorum;
         uint256 quorumRequired;
         bool open;
@@ -136,15 +138,6 @@ contract BancorGovernance is Owned {
     event Vote(uint256 indexed _id, address indexed _voter, bool _vote, uint256 _weight);
 
     /**
-     * @notice triggered when voter has revoked its votes
-     *
-     * @param _voter        voter address
-     * @param _votes        number of votes
-     * @param _totalVotes   global total number of votes
-     */
-    event VotesRevoked(address indexed _voter, uint256 _votes, uint256 _totalVotes);
-
-    /**
      * @notice triggered when the quorum is changed
      *
      * @param _quorum       the new quorum
@@ -180,8 +173,8 @@ contract BancorGovernance is Owned {
     uint256 public voteLock = 17280;
     // minimum stake required
     uint256 public voteMinimum = 1e18;
-    // quorum needed for a proposal to pass
-    uint256 public quorum = 2000;
+    // quorum needed for a proposal to pass, default = 20%
+    uint256 public quorum = 200000;
     // sum of current total votes
     uint256 public totalVotes;
     // number of proposals
@@ -277,7 +270,7 @@ contract BancorGovernance is Owned {
             proposals[_id].totalVotesAgainst
         );
 
-        return totalProposalVotes.mul(10000).div(totalVotes);
+        return totalProposalVotes.mul(PPM_RESOLUTION).div(totalVotes);
     }
 
     /**
@@ -295,26 +288,18 @@ contract BancorGovernance is Owned {
      * @return votes against ratio
      * @return quorum ratio
      */
-    function proposalStats(uint256 _id)
-        public
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function proposalStats(uint256 _id) public view returns (uint256, uint256, uint256) {
         uint256 forRatio = proposals[_id].totalVotesFor;
         uint256 againstRatio = proposals[_id].totalVotesAgainst;
 
         // calculate overall total votes
         uint256 totalProposalVotes = forRatio.add(againstRatio);
         // calculate for votes ratio
-        forRatio = forRatio.mul(10000).div(totalProposalVotes);
+        forRatio = forRatio.mul(PPM_RESOLUTION).div(totalProposalVotes);
         // calculate against votes ratio
-        againstRatio = againstRatio.mul(10000).div(totalProposalVotes);
+        againstRatio = againstRatio.mul(PPM_RESOLUTION).div(totalProposalVotes);
         // calculate quorum ratio
-        uint256 quorumRatio = totalProposalVotes.mul(10000).div(proposals[_id].totalVotesAvailable);
+        uint256 quorumRatio = totalProposalVotes.mul(PPM_RESOLUTION).div(proposals[_id].totalAvailableVotes);
 
         return (forRatio, againstRatio, quorumRatio);
     }
@@ -356,7 +341,11 @@ contract BancorGovernance is Owned {
      *
      * @param _quorum required quorum
      */
-    function setQuorum(uint256 _quorum) public ownerOnly greaterThanZero(_quorum) {
+    function setQuorum(uint256 _quorum)
+        public
+        ownerOnly
+        greaterThanZero(_quorum)
+    {
         quorum = _quorum;
         emit QuorumChanged(_quorum);
     }
@@ -366,7 +355,11 @@ contract BancorGovernance is Owned {
      *
      * @param _voteMinimum required minimum votes
      */
-    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly greaterThanZero(_voteMinimum) {
+    function setVoteMinimum(uint256 _voteMinimum)
+        public
+        ownerOnly
+        greaterThanZero(_voteMinimum)
+    {
         voteMinimum = _voteMinimum;
         emit VoteMinimumChanged(_voteMinimum);
     }
@@ -390,7 +383,11 @@ contract BancorGovernance is Owned {
      *
      * @param _voteLock vote lock
      */
-    function setVoteLock(uint256 _voteLock) public ownerOnly greaterThanZero(_voteLock) {
+    function setVoteLock(uint256 _voteLock)
+        public
+        ownerOnly
+        greaterThanZero(_voteLock)
+    {
         voteLock = _voteLock;
         emit VoteLockChanged(_voteLock);
     }
@@ -414,7 +411,7 @@ contract BancorGovernance is Owned {
             end: voteDuration.add(block.number),
             executor: _executor,
             hash: _hash,
-            totalVotesAvailable: totalVotes,
+            totalAvailableVotes: totalVotes,
             quorum: 0,
             quorumRequired: quorum,
             open: true,
@@ -532,7 +529,11 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote for
      */
-    function voteFor(uint256 _id) public onlyStaker proposalNotEnded(_id) {
+    function voteFor(uint256 _id)
+        public
+        onlyStaker
+        proposalNotEnded(_id)
+    {
         // mark sender as voter
         voters[msg.sender] = true;
 
@@ -553,7 +554,7 @@ contract BancorGovernance is Owned {
         // set for votes to the votes of the sender
         proposals[_id].votesFor[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
-        proposals[_id].totalVotesAvailable = totalVotes;
+        proposals[_id].totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
         proposals[_id].quorum = calculateQuorumRatio(_id);
         // lock sender
@@ -568,7 +569,11 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote against
      */
-    function voteAgainst(uint256 _id) public onlyStaker proposalNotEnded(_id) {
+    function voteAgainst(uint256 _id)
+        public
+        onlyStaker
+        proposalNotEnded(_id)
+    {
         // mark sender as voter
         voters[msg.sender] = true;
 
@@ -588,7 +593,7 @@ contract BancorGovernance is Owned {
         // set against votes to the votes of the sender
         proposals[_id].votesAgainst[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
-        proposals[_id].totalVotesAvailable = totalVotes;
+        proposals[_id].totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
         proposals[_id].quorum = calculateQuorumRatio(_id);
         // lock sender

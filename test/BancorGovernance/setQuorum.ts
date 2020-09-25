@@ -24,7 +24,7 @@ contract("BancorGovernance", async (accounts) => {
   describe("#setQuorum()", async () => {
     it("should set quorum from owner", async () => {
       const quorumBefore = await governance.quorum.call()
-      assert.strictEqual((2000).toString(), quorumBefore.toString())
+      assert.strictEqual((200000).toString(), quorumBefore.toString())
 
       const quorum = 5
       await governance.setQuorum((quorum * decimals).toString(), {from: owner})

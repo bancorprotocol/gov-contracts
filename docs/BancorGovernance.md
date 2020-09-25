@@ -200,13 +200,6 @@ triggered when a user votes on a proposal
 
 
 
-### `VotesRevoked(address _voter, uint256 _votes, uint256 _totalVotes)`
-
-triggered when voter has revoked its votes
-
-
-
-
 ### `QuorumChanged(uint256 _quorum)`
 
 triggered when the quorum is changed
