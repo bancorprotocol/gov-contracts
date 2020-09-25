@@ -10,12 +10,6 @@ allows execution by staker only
 
 
 
-### `onlyVoter()`
-
-allows execution by voter only
-
-
-
 ### `proposalNotEnded(uint256 _id)`
 
 allows execution only when the proposal with given id is open
