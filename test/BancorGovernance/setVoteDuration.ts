@@ -2,13 +2,13 @@
 import * as truffleAssert from "truffle-assertions"
 
 contract("BancorGovernance", async (accounts) => {
-  const BancorGovernance = artifacts.require("BancorGovernance");
-  const TestToken = artifacts.require("TestToken");
+  const BancorGovernance = artifacts.require("BancorGovernance")
+  const TestToken = artifacts.require("TestToken")
 
   const decimals = 1e18
 
-  let governance: any;
-  let govToken: any;
+  let governance: any
+  let govToken: any
 
   const owner = accounts[0]
   const someone = accounts[5]
@@ -18,24 +18,18 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    governance = await BancorGovernance.new(
-      govToken.address
-    );
+    governance = await BancorGovernance.new(govToken.address)
   })
 
   describe("#setVoteDuration()", async () => {
     it("should set vote duration from owner", async () => {
       const voteDurationBefore = await governance.voteDuration.call()
-      assert.strictEqual(
-        (17280).toString(),
-        voteDurationBefore.toString()
-      )
+      assert.strictEqual((17280).toString(), voteDurationBefore.toString())
 
       const voteDuration = 5
-      await governance.setVoteDuration(
-        (voteDuration * decimals).toString(),
-        {from: owner}
-      )
+      await governance.setVoteDuration((voteDuration * decimals).toString(), {
+        from: owner,
+      })
 
       const voteDurationAfter = await governance.voteDuration.call()
       assert.strictEqual(
@@ -47,10 +41,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to set vote duration to 0", async () => {
       await truffleAssert.fails(
         // set vote duration
-        governance.setVoteDuration(
-          (0).toString(),
-          {from: owner}
-        ),
+        governance.setVoteDuration((0).toString(), {from: owner}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ZERO_VALUE"
       )
@@ -59,10 +50,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to set vote duration from someone", async () => {
       await truffleAssert.fails(
         // set vote duration
-        governance.setVoteDuration(
-          (0).toString(),
-          {from: someone}
-        ),
+        governance.setVoteDuration((0).toString(), {from: someone}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ACCESS_DENIED"
       )

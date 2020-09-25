@@ -66,6 +66,7 @@ contract BancorGovernance is Owned {
         uint256 quorum;
         uint256 quorumRequired;
         bool open;
+        bool executed;
     }
 
     /**
@@ -246,7 +247,6 @@ contract BancorGovernance is Owned {
      */
     modifier proposalEnded(uint256 _id) {
         require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
-        require(proposals[_id].open, "ERR_NOT_OPEN");
         require(proposals[_id].end < block.number, "ERR_NOT_ENDED");
         _;
     }
@@ -413,7 +413,8 @@ contract BancorGovernance is Owned {
             totalVotesAvailable: totalVotes,
             quorum: 0,
             quorumRequired: quorum,
-            open: true
+            open: true,
+            executed: false
         });
 
         // emit proposal event
@@ -432,13 +433,23 @@ contract BancorGovernance is Owned {
      * @param _id id of the proposal to execute
      */
     function execute(uint256 _id) public proposalEnded(_id) {
+        // check for executed status
+        require(!proposals[_id].executed, "ERR_ALREADY_EXECUTED");
+
         // get voting info of proposal
         (uint256 forRatio, uint256 againstRatio, uint256 quorumRatio) = proposalStats(_id);
         // check proposal state
         require(proposals[_id].quorumRequired < quorumRatio, "ERR_NO_QUORUM");
 
-        // tally votes
-        tallyVotes(_id);
+        // if the proposal is still open
+        if (proposals[_id].open) {
+            // tally votes
+            tallyVotes(_id);
+        }
+
+        // set executed
+        proposals[_id].executed = true;
+
         // do execution on the contract to be executed
         IExecutor(proposals[_id].executor).execute(_id, forRatio, againstRatio, quorumRatio);
 
@@ -452,6 +463,9 @@ contract BancorGovernance is Owned {
      * @param _id id of the proposal to tally votes for
      */
     function tallyVotes(uint256 _id) public proposalEnded(_id) {
+        // only tally votes for proposals that are open
+        require(proposals[_id].open, "ERR_NOT_OPEN");
+
         // get voting info of proposal
         (uint256 forRatio, uint256 againstRatio, ) = proposalStats(_id);
         // assume we have no quorum

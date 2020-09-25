@@ -1,17 +1,24 @@
-const sendRPCCall = async (web3: any, method: string, parameters: any[] = []) => {
+const sendRPCCall = async (
+  web3: any,
+  method: string,
+  parameters: any[] = []
+) => {
   return new Promise((resolve, reject) => {
-    web3.currentProvider.send({
-      jsonrpc: "2.0",
-      method: method,
-      params: parameters,
-      id: new Date().getTime(),
-    }, (err: Error, _: any) => {
-      if (err) {
-        return reject(err);
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: method,
+        params: parameters,
+        id: new Date().getTime(),
+      },
+      (err: Error, _: any) => {
+        if (err) {
+          return reject(err)
+        }
+        return resolve()
       }
-      return resolve();
-    });
-  });
+    )
+  })
 }
 
 export const mine = async (web3: any, times: number = 1) => {
