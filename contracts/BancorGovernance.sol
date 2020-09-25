@@ -66,6 +66,7 @@ contract BancorGovernance is Owned {
         uint256 quorum;
         uint256 quorumRequired;
         bool open;
+        bool executed;
     }
 
     /**
@@ -137,11 +138,39 @@ contract BancorGovernance is Owned {
     /**
      * @notice triggered when voter has revoked its votes
      *
-     * @param _voter        voter addrerss
+     * @param _voter        voter address
      * @param _votes        number of votes
      * @param _totalVotes   global total number of votes
      */
     event VotesRevoked(address indexed _voter, uint256 _votes, uint256 _totalVotes);
+
+    /**
+     * @notice triggered when the quorum is changed
+     *
+     * @param _quorum       the new quorum
+     */
+    event QuorumChanged(uint256 _quorum);
+
+    /**
+     * @notice triggered when the vote minimum is changed
+     *
+     * @param _voteMinimum  the new vote minimum
+     */
+    event VoteMinimumChanged(uint256 _voteMinimum);
+
+    /**
+     * @notice triggered when the vote duration is changed
+     *
+     * @param _voteDuration the new vote duration
+     */
+    event VoteDurationChanged(uint256 _voteDuration);
+
+    /**
+     * @notice triggered when the vote lock is changed
+     *
+     * @param _voteLock     the new vote lock
+     */
+    event VoteLockChanged(uint256 _voteLock);
 
     // PROPOSALS
 
@@ -178,6 +207,8 @@ contract BancorGovernance is Owned {
      * @param _govToken token used to represents votes
      */
     constructor(IERC20 _govToken) public {
+        proposalCount = 0;
+        totalVotes = 0;
         govToken = _govToken;
     }
 
@@ -186,14 +217,6 @@ contract BancorGovernance is Owned {
      */
     modifier onlyStaker() {
         require(votes[msg.sender] > 0, "ERR_NOT_STAKER");
-        _;
-    }
-
-    /**
-     * @notice allows execution by voter only
-     */
-    modifier onlyVoter() {
-        require(voters[msg.sender] == true, "ERR_NOT_VOTER");
         _;
     }
 
@@ -216,8 +239,17 @@ contract BancorGovernance is Owned {
      */
     modifier proposalEnded(uint256 _id) {
         require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
-        require(proposals[_id].open, "ERR_NOT_OPEN");
         require(proposals[_id].end < block.number, "ERR_NOT_ENDED");
+        _;
+    }
+
+    /**
+     * @notice verifies that a value is greater than zero
+     *
+     * @param _value    value to check for zero
+     */
+    modifier greaterThanZero(uint256 _value) {
+        require(_value > 0, "ERR_ZERO_VALUE");
         _;
     }
 
@@ -312,8 +344,9 @@ contract BancorGovernance is Owned {
      *
      * @param _quorum required quorum
      */
-    function setQuorum(uint256 _quorum) public ownerOnly {
+    function setQuorum(uint256 _quorum) public ownerOnly greaterThanZero(_quorum) {
         quorum = _quorum;
+        emit QuorumChanged(_quorum);
     }
 
     /**
@@ -321,8 +354,9 @@ contract BancorGovernance is Owned {
      *
      * @param _voteMinimum required minimum votes
      */
-    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly {
+    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly greaterThanZero(_voteMinimum) {
         voteMinimum = _voteMinimum;
+        emit VoteMinimumChanged(_voteMinimum);
     }
 
     /**
@@ -330,8 +364,13 @@ contract BancorGovernance is Owned {
      *
      * @param _voteDuration vote duration
      */
-    function setVoteDuration(uint256 _voteDuration) public ownerOnly {
+    function setVoteDuration(uint256 _voteDuration)
+        public
+        ownerOnly
+        greaterThanZero(_voteDuration)
+    {
         voteDuration = _voteDuration;
+        emit VoteDurationChanged(_voteDuration);
     }
 
     /**
@@ -339,8 +378,9 @@ contract BancorGovernance is Owned {
      *
      * @param _voteLock vote lock
      */
-    function setVoteLock(uint256 _voteLock) public ownerOnly {
+    function setVoteLock(uint256 _voteLock) public ownerOnly greaterThanZero(_voteLock) {
         voteLock = _voteLock;
+        emit VoteLockChanged(_voteLock);
     }
 
     /**
@@ -365,7 +405,8 @@ contract BancorGovernance is Owned {
             totalVotesAvailable: totalVotes,
             quorum: 0,
             quorumRequired: quorum,
-            open: true
+            open: true,
+            executed: false
         });
 
         // emit proposal event
@@ -375,7 +416,7 @@ contract BancorGovernance is Owned {
         voteLocks[msg.sender] = voteLock.add(block.number);
 
         // increment proposal count so next proposal gets the next higher id
-        proposalCount++;
+        proposalCount = proposalCount.add(1);
     }
 
     /**
@@ -384,13 +425,23 @@ contract BancorGovernance is Owned {
      * @param _id id of the proposal to execute
      */
     function execute(uint256 _id) public proposalEnded(_id) {
+        // check for executed status
+        require(!proposals[_id].executed, "ERR_ALREADY_EXECUTED");
+
         // get voting info of proposal
         (uint256 forRatio, uint256 againstRatio, uint256 quorumRatio) = proposalStats(_id);
         // check proposal state
         require(proposals[_id].quorumRequired < quorumRatio, "ERR_NO_QUORUM");
 
-        // tally votes
-        tallyVotes(_id);
+        // if the proposal is still open
+        if (proposals[_id].open) {
+            // tally votes
+            tallyVotes(_id);
+        }
+
+        // set executed
+        proposals[_id].executed = true;
+
         // do execution on the contract to be executed
         IExecutor(proposals[_id].executor).execute(_id, forRatio, againstRatio, quorumRatio);
 
@@ -404,6 +455,9 @@ contract BancorGovernance is Owned {
      * @param _id id of the proposal to tally votes for
      */
     function tallyVotes(uint256 _id) public proposalEnded(_id) {
+        // only tally votes for proposals that are open
+        require(proposals[_id].open, "ERR_NOT_OPEN");
+
         // get voting info of proposal
         (uint256 forRatio, uint256 againstRatio, ) = proposalStats(_id);
         // assume we have no quorum
@@ -425,9 +479,7 @@ contract BancorGovernance is Owned {
      *
      * @param _amount amount of vote tokens to stake
      */
-    function stake(uint256 _amount) public {
-        require(_amount > 0, "ERR_STAKE_ZERO");
-
+    function stake(uint256 _amount) public greaterThanZero(_amount) {
         // increase vote power
         votes[msg.sender] = votesOf(msg.sender).add(_amount);
         // increase total votes
@@ -444,8 +496,7 @@ contract BancorGovernance is Owned {
      *
      * @param _amount amount of vote tokens to unstake
      */
-    function unstake(uint256 _amount) public {
-        require(_amount > 0, "ERR_UNSTAKE_ZERO");
+    function unstake(uint256 _amount) public greaterThanZero(_amount) {
         require(voteLocks[msg.sender] < block.number, "ERR_LOCKED");
 
         // reduce votes for user
@@ -528,17 +579,5 @@ contract BancorGovernance is Owned {
 
         // emit vote event
         emit Vote(_id, msg.sender, false, vote);
-    }
-
-    /**
-     * @notice revokes votes
-     */
-    function revokeVotes() public onlyVoter {
-        voters[msg.sender] = false;
-        totalVotes = totalVotes.sub(votes[msg.sender]);
-
-        // emit vote revocation event
-        emit VotesRevoked(msg.sender, votesOf(msg.sender), totalVotes);
-        votes[msg.sender] = 0;
     }
 }

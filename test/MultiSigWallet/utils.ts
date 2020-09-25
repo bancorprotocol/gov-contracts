@@ -12,15 +12,11 @@ export const deployMultiSig = async (
   const MultiSigWalletWithDailyLimitInstance = await tmp
     .deploy({
       data: MultiSigWalletWithDailyLimitArtifact.unlinked_binary,
-      arguments: [
-        owners,
-        requiredSignatures,
-        limit
-      ]
+      arguments: [owners, requiredSignatures, limit],
     })
     .send({
       from: deployer,
-      gas: 3000000
+      gas: 3000000,
     })
 
   return MultiSigWalletWithDailyLimitInstance
@@ -37,18 +33,14 @@ export const submitTransaction = async (
     target,
     0, // value in ether
     // transaction to invoke on target contract encoded
-    data
+    data,
   ]
 
   // call submit tx with given payload
-  const tx = await wallet.methods
-    .submitTransaction(
-      ...args
-    )
-    .send({
-      from: member,
-      gas: 200000
-    })
+  const tx = await wallet.methods.submitTransaction(...args).send({
+    from: member,
+    gas: 200000,
+  })
 
   return tx
 }
@@ -58,14 +50,11 @@ export const confirmTransaction = async (
   txId: string,
   member: string
 ) => {
-
   // call submit tx with given payload
-  const tx = await wallet.methods
-    .confirmTransaction(txId)
-    .send({
-      from: member,
-      gas: 200000
-    })
+  const tx = await wallet.methods.confirmTransaction(txId).send({
+    from: member,
+    gas: 200000,
+  })
 
   return tx
 }

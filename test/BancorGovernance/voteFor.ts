@@ -1,15 +1,15 @@
-import { propose, stake } from "./utils";
+import {propose, stake} from "./utils"
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
-import { mine } from "../timeTravel";
+import {mine} from "../timeTravel"
 
 contract("BancorGovernance", async (accounts) => {
-  const BancorGovernance = artifacts.require("BancorGovernance");
-  const TestToken = artifacts.require("TestToken");
+  const BancorGovernance = artifacts.require("BancorGovernance")
+  const TestToken = artifacts.require("TestToken")
   const decimals = 1e18
 
-  let governance: any;
-  let govToken: any;
+  let governance: any
+  let govToken: any
 
   const owner = accounts[0]
   const proposer = accounts[2]
@@ -26,131 +26,65 @@ contract("BancorGovernance", async (accounts) => {
   })
 
   beforeEach(async () => {
-    governance = await BancorGovernance.new(
-      govToken.address
-    );
+    governance = await BancorGovernance.new(govToken.address)
   })
 
   describe("#voteFor()", async () => {
     it("should vote for own proposal", async () => {
       // stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        2
-      )
+      await stake(governance, govToken, proposer, 2)
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       // vote for
-      await governance.voteFor(
-        proposalId,
-        {from: proposer}
-      )
+      await governance.voteFor(proposalId, {from: proposer})
     })
 
     it("should vote for others proposal", async () => {
       const amount = 2
       // proposer stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        amount
-      )
+      await stake(governance, govToken, proposer, amount)
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       // voter stake
-      await stake(
-        governance,
-        govToken,
-        voter,
-        amount
-      )
+      await stake(governance, govToken, voter, amount)
       // vote for
-      await governance.voteFor(
-        proposalId,
-        {from: voter}
-      )
+      await governance.voteFor(proposalId, {from: voter})
     })
 
     it("should note vote for twice", async () => {
       const amount = 2
       // proposer stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        amount
-      )
+      await stake(governance, govToken, proposer, amount)
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       // voter stake
-      await stake(
-        governance,
-        govToken,
-        voter,
-        amount
-      )
+      await stake(governance, govToken, voter, amount)
       // vote for once
-      await governance.voteFor(
-        proposalId,
-        {from: voter}
-      )
+      await governance.voteFor(proposalId, {from: voter})
       // should be two
-      const votesAfterOnce = (await governance.proposals(proposalId)).totalVotesFor.toString()
-      assert.strictEqual(
-        votesAfterOnce,
-        (amount * decimals).toString()
-      )
+      const votesAfterOnce = (
+        await governance.proposals(proposalId)
+      ).totalVotesFor.toString()
+      assert.strictEqual(votesAfterOnce, (amount * decimals).toString())
       // vote for twice
-      await governance.voteFor(
-        proposalId,
-        {from: voter}
-      )
+      await governance.voteFor(proposalId, {from: voter})
       // should still be two
-      const votesAfterTwice = (await governance.proposals(proposalId)).totalVotesFor.toString()
-      assert.strictEqual(
-        votesAfterTwice,
-        (amount * decimals).toString()
-      )
+      const votesAfterTwice = (
+        await governance.proposals(proposalId)
+      ).totalVotesFor.toString()
+      assert.strictEqual(votesAfterTwice, (amount * decimals).toString())
     })
 
     it("should override voting against a proposal when voting for it", async () => {
       const amount = 2
       // proposer stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        amount
-      )
+      await stake(governance, govToken, proposer, amount)
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       // voter stake
-      await stake(
-        governance,
-        govToken,
-        voter,
-        amount
-      )
+      await stake(governance, govToken, voter, amount)
       // vote against
-      await governance.voteAgainst(
-        proposalId,
-        {from: voter}
-      )
+      await governance.voteAgainst(proposalId, {from: voter})
       // evaluate
       const proposalVoteAgainst = await governance.proposals.call(proposalId)
       assert.strictEqual(
@@ -162,10 +96,7 @@ contract("BancorGovernance", async (accounts) => {
         (amount * decimals).toString()
       )
       // vote for
-      await governance.voteFor(
-        proposalId,
-        {from: voter}
-      )
+      await governance.voteFor(proposalId, {from: voter})
       // evaluate
       const proposalVoteFor = await governance.proposals.call(proposalId)
       assert.strictEqual(
@@ -180,18 +111,10 @@ contract("BancorGovernance", async (accounts) => {
 
     it("should fail to vote for an unknown proposal", async () => {
       // voter stake
-      await stake(
-        governance,
-        govToken,
-        voter,
-        1
-      )
+      await stake(governance, govToken, voter, 1)
       await truffleAssert.fails(
         // vote for
-        governance.voteFor(
-          "0x1337",
-          {from: voter}
-        ),
+        governance.voteFor("0x1337", {from: voter}),
         truffleAssert.ErrorType.REVERT,
         "ERR_NO_PROPOSAL"
       )
@@ -199,23 +122,12 @@ contract("BancorGovernance", async (accounts) => {
 
     it("should fail to vote for from someone", async () => {
       // stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        2
-      )
+      await stake(governance, govToken, proposer, 2)
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       await truffleAssert.fails(
         // vote for
-        governance.voteFor(
-          proposalId,
-          {from: someone}
-        ),
+        governance.voteFor(proposalId, {from: someone}),
         truffleAssert.ErrorType.REVERT,
         "ERR_NOT_STAKER"
       )
@@ -224,37 +136,18 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to vote for an expired proposal", async () => {
       const amount = 2
       // proposer stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        amount
-      )
-      await governance.setVoteDuration(
-        2,
-        {from: owner}
-      )
+      await stake(governance, govToken, proposer, amount)
+      await governance.setVoteDuration(2, {from: owner})
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       // voter stake
-      await stake(
-        governance,
-        govToken,
-        voter,
-        1
-      )
+      await stake(governance, govToken, voter, 1)
       // mine two blocks
       await mine(web3, 2)
       // fail
       await truffleAssert.fails(
         // vote for
-        governance.voteFor(
-          proposalId,
-          {from: voter}
-        ),
+        governance.voteFor(proposalId, {from: voter}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ENDED"
       )
@@ -264,52 +157,26 @@ contract("BancorGovernance", async (accounts) => {
       const amount = 2
       const duration = 2
       // stake
-      await stake(
-        governance,
-        govToken,
-        proposer,
-        amount
-      )
+      await stake(governance, govToken, proposer, amount)
       // stake
-      await stake(
-        governance,
-        govToken,
-        voter,
-        amount
-      )
+      await stake(governance, govToken, voter, amount)
       // lower duration so we dot have to mine 17k blocks
-      await governance.setVoteDuration(
-        duration,
-        {from: owner}
-      )
+      await governance.setVoteDuration(duration, {from: owner})
       // propose
-      const proposalId = await propose(
-        governance,
-        proposer
-      )
+      const proposalId = await propose(governance, proposer)
       // vote
-      await governance.voteFor(
-        proposalId,
-        {from: voter}
-      )
+      await governance.voteFor(proposalId, {from: voter})
       // mine blocks
       await mine(web3, duration)
       // execute
-      await governance.tallyVotes(
-        proposalId,
-        {from: someone}
-      )
+      await governance.tallyVotes(proposalId, {from: someone})
       // fail
       await truffleAssert.fails(
         // vote for second
-        governance.voteFor(
-          proposalId,
-          {from: voter}
-        ),
+        governance.voteFor(proposalId, {from: voter}),
         truffleAssert.ErrorType.REVERT,
         "ERR_NOT_OPEN"
       )
     })
-
   })
 })

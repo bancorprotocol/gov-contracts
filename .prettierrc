@@ -10,6 +10,11 @@
         "bracketSpacing": false,
         "explicitTypes": "always"
       }
+    }, {
+      "files": "*.ts",
+      "options": {
+        "semi": false
+      }
     }
   ]
 }

@@ -1,22 +1,18 @@
-import {confirmTransaction, deployMultiSig, submitTransaction} from "./utils";
+import {confirmTransaction, deployMultiSig, submitTransaction} from "./utils"
 
 contract("BancorGovernance", async (accounts) => {
-  const BancorGovernance = artifacts.require("BancorGovernance");
-  const TestToken = artifacts.require("TestToken");
+  const BancorGovernance = artifacts.require("BancorGovernance")
+  const TestToken = artifacts.require("TestToken")
 
   let MultiSigWalletWithDailyLimit: any
-  let governance: any;
-  let govToken: any;
+  let governance: any
+  let govToken: any
 
   const owner = accounts[0]
   const deployer = accounts[1]
 
   // 3 owners
-  const owners = [
-    accounts[2],
-    accounts[3],
-    accounts[4],
-  ]
+  const owners = [accounts[2], accounts[3], accounts[4]]
   // at least 2 confirmations
   const requiredSignatures = 2
   // 5 ether limit
@@ -36,18 +32,13 @@ contract("BancorGovernance", async (accounts) => {
       deployer
     )
 
-    governance = await BancorGovernance.new(
-      govToken.address
-    );
+    governance = await BancorGovernance.new(govToken.address)
   })
 
-  describe('MultiSigWalletWithDailyLimit', async () => {
+  describe("MultiSigWalletWithDailyLimit", async () => {
     it("should deploy and configure properly", async () => {
       const r = await MultiSigWalletWithDailyLimit.methods.required().call()
-      assert.strictEqual(
-        r.toString(),
-        requiredSignatures.toString()
-      )
+      assert.strictEqual(r.toString(), requiredSignatures.toString())
 
       const l = await MultiSigWalletWithDailyLimit.methods.dailyLimit().call()
       assert.strictEqual(l.toString(), limitInWei)
@@ -56,7 +47,7 @@ contract("BancorGovernance", async (accounts) => {
       assert.strictEqual(o, owners[0])
     })
 
-    describe('transferOwnership', async () => {
+    describe("transferOwnership", async () => {
       it("should transfer ownership to multi sig instance", async () => {
         // transferOwnership to multi sig
         await governance.transferOwnership(
@@ -73,10 +64,7 @@ contract("BancorGovernance", async (accounts) => {
 
         // but current owner should stay untouched
         const currentOwner = await governance.owner.call()
-        assert.strictEqual(
-          currentOwner,
-          owner
-        )
+        assert.strictEqual(currentOwner, owner)
       })
 
       it("should accept ownership from multi sig", async () => {
@@ -109,17 +97,13 @@ contract("BancorGovernance", async (accounts) => {
         const txId = events.Submission.returnValues.transactionId
 
         // confirm tx on the multi sig wallet from different owner
-        await confirmTransaction(
-          MultiSigWalletWithDailyLimit,
-          txId,
-          owners[1]
-        )
+        await confirmTransaction(MultiSigWalletWithDailyLimit, txId, owners[1])
 
         // should be empty now
         const newOwnerAfter = await governance.newOwner.call()
         assert.strictEqual(
           newOwnerAfter,
-          '0x0000000000000000000000000000000000000000'
+          "0x0000000000000000000000000000000000000000"
         )
 
         // finally new owner should be the multi sig wallet

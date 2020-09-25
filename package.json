@@ -24,7 +24,7 @@
     "coverage": "truffle run coverage",
     "doc": "solidity-docgen --exclude ./contracts/test/,./contracts/truffle/",
     "clean": "rm -rf ./build/ ./coverage/ coverage.json",
-    "prettier": "prettier --write ./contracts/**/**/*.sol",
+    "prettier": "prettier --write ./contracts/**/**/*.sol ./test/**/**/*.ts",
     "lint": "yarn lint:sol",
     "lint:sol": "solhint contracts/**/*.sol",
     "snyk-protect": "snyk protect",
