@@ -30,6 +30,13 @@ allows execution only when the proposal with given id has ended
 
 
 
+### `greaterThanZero(uint256 _value)`
+
+verifies that a value is greater than zero
+
+
+
+
 
 ### `constructor(contract IERC20 _govToken)` (public)
 
@@ -156,12 +163,6 @@ votes against a proposal
 
 
 
-### `revokeVotes()` (public)
-
-revokes votes
-
-
-
 
 ### `NewProposal(uint256 _id, address _creator, uint256 _start, uint256 _duration, address _executor)`
 
@@ -208,6 +209,34 @@ triggered when a user votes on a proposal
 ### `VotesRevoked(address _voter, uint256 _votes, uint256 _totalVotes)`
 
 triggered when voter has revoked its votes
+
+
+
+
+### `QuorumChanged(uint256 _quorum)`
+
+triggered when the quorum is changed
+
+
+
+
+### `VoteMinimumChanged(uint256 _voteMinimum)`
+
+triggered when the vote minimum is changed
+
+
+
+
+### `VoteDurationChanged(uint256 _voteDuration)`
+
+triggered when the vote duration is changed
+
+
+
+
+### `VoteLockChanged(uint256 _voteLock)`
+
+triggered when the vote lock is changed
 
 
 
