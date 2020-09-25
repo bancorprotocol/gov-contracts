@@ -44,7 +44,7 @@ contract("BancorGovernance", async (accounts) => {
 
     it("should be able to exit when not voted after some time", async () => {
       // lower the vote lock
-      await governance.setVoteLock(2, {from: owner})
+      await governance.setVoteLockDuration(2, {from: owner})
       // stake
       await stake(governance, govToken, proposer, 2)
       // let some time pass
@@ -57,7 +57,7 @@ contract("BancorGovernance", async (accounts) => {
       const period = 5
       // reduce locks
       await governance.setVoteDuration(period, {from: owner})
-      await governance.setVoteLock(period, {from: owner})
+      await governance.setVoteLockDuration(period, {from: owner})
       // stake
       await stake(governance, govToken, proposer, 2)
       // propose

@@ -21,27 +21,27 @@ contract("BancorGovernance", async (accounts) => {
     governance = await BancorGovernance.new(govToken.address)
   })
 
-  describe("#setVoteLock()", async () => {
+  describe("#setVoteLockDuration()", async () => {
     it("should set vote lock from owner", async () => {
-      const voteLockBefore = await governance.voteLock.call()
-      assert.strictEqual((17280).toString(), voteLockBefore.toString())
+      const voteLockDurationBefore = await governance.voteLockDuration.call()
+      assert.strictEqual((17280).toString(), voteLockDurationBefore.toString())
 
-      const voteLock = 5
-      await governance.setVoteLock((voteLock * decimals).toString(), {
+      const voteLockDuration = 5
+      await governance.setVoteLockDuration((voteLockDuration * decimals).toString(), {
         from: owner,
       })
 
-      const voteLockAfter = await governance.voteLock.call()
+      const voteLockDurationAfter = await governance.voteLockDuration.call()
       assert.strictEqual(
-        (voteLock * decimals).toString(),
-        voteLockAfter.toString()
+        (voteLockDuration * decimals).toString(),
+        voteLockDurationAfter.toString()
       )
     })
 
     it("should fail to set vote lock to 0", async () => {
       await truffleAssert.fails(
         // set vote lock
-        governance.setVoteLock((0).toString(), {from: owner}),
+        governance.setVoteLockDuration((0).toString(), {from: owner}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ZERO_VALUE"
       )
@@ -50,7 +50,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to set vote lock from someone", async () => {
       await truffleAssert.fails(
         // set vote lock
-        governance.setVoteLock((0).toString(), {from: someone}),
+        governance.setVoteLockDuration((0).toString(), {from: someone}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ACCESS_DENIED"
       )

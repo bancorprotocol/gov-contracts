@@ -138,39 +138,39 @@ contract BancorGovernance is Owned {
     event Vote(uint256 indexed _id, address indexed _voter, bool _vote, uint256 _weight);
 
     /**
-     * @notice triggered when the quorum is changed
+     * @notice triggered when the quorum is updated
      *
-     * @param _quorum       the new quorum
+     * @param _quorum   the new quorum
      */
-    event QuorumChanged(uint256 _quorum);
+    event QuorumUpdated(uint256 _quorum);
 
     /**
-     * @notice triggered when the vote minimum is changed
+     * @notice triggered when the vote minimum is updated
      *
      * @param _voteMinimum  the new vote minimum
      */
-    event VoteMinimumChanged(uint256 _voteMinimum);
+    event VoteMinimumUpdated(uint256 _voteMinimum);
 
     /**
-     * @notice triggered when the vote duration is changed
+     * @notice triggered when the vote duration is updated
      *
      * @param _voteDuration the new vote duration
      */
-    event VoteDurationChanged(uint256 _voteDuration);
+    event VoteDurationUpdated(uint256 _voteDuration);
 
     /**
-     * @notice triggered when the vote lock is changed
+     * @notice triggered when the vote lock duration is updated
      *
-     * @param _voteLock     the new vote lock
+     * @param _duration the new vote lock duration
      */
-    event VoteLockChanged(uint256 _voteLock);
+    event VoteLockDurationUpdated(uint256 _duration);
 
     // PROPOSALS
 
     // voting duration in blocks, 3 days = ~17280 for 15s/block
     uint256 public voteDuration = 17280;
     // vote lock in blocks, 3 days = ~17280 for 15s/block
-    uint256 public voteLock = 17280;
+    uint256 public voteLockDuration = 17280;
     // minimum stake required
     uint256 public voteMinimum = 1e18;
     // quorum needed for a proposal to pass, default = 20%
@@ -247,14 +247,14 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @notice Updates the lock on the sender
+     * @notice Updates the vote lock on the sender
      *
      * @param _proposalEnd  the block number when the proposal ends
      */
-    function updateLock(uint256 _proposalEnd) private onlyStaker {
+    function updateVoteLock(uint256 _proposalEnd) private onlyStaker {
         voteLocks[msg.sender] = Math.max(
             voteLocks[msg.sender],
-            Math.max(_proposalEnd, voteLock.add(block.number))
+            Math.max(_proposalEnd, voteLockDuration.add(block.number))
         );
     }
 
@@ -347,7 +347,7 @@ contract BancorGovernance is Owned {
         greaterThanZero(_quorum)
     {
         quorum = _quorum;
-        emit QuorumChanged(_quorum);
+        emit QuorumUpdated(_quorum);
     }
 
     /**
@@ -361,7 +361,7 @@ contract BancorGovernance is Owned {
         greaterThanZero(_voteMinimum)
     {
         voteMinimum = _voteMinimum;
-        emit VoteMinimumChanged(_voteMinimum);
+        emit VoteMinimumUpdated(_voteMinimum);
     }
 
     /**
@@ -375,21 +375,21 @@ contract BancorGovernance is Owned {
         greaterThanZero(_voteDuration)
     {
         voteDuration = _voteDuration;
-        emit VoteDurationChanged(_voteDuration);
+        emit VoteDurationUpdated(_voteDuration);
     }
 
     /**
      * @notice updates the post vote lock duration
      *
-     * @param _voteLock vote lock
+     * @param _duration new vote lock duration
      */
-    function setVoteLock(uint256 _voteLock)
+    function setVoteLockDuration(uint256 _duration)
         public
         ownerOnly
-        greaterThanZero(_voteLock)
+        greaterThanZero(_duration)
     {
-        voteLock = _voteLock;
-        emit VoteLockChanged(_voteLock);
+        voteLockDuration = _duration;
+        emit VoteLockDurationUpdated(_duration);
     }
 
     /**
@@ -424,7 +424,7 @@ contract BancorGovernance is Owned {
         emit NewProposal(proposalCount, msg.sender, block.number, voteDuration, _executor);
 
         // lock proposer
-        updateLock(proposal.end);
+        updateVoteLock(proposal.end);
 
         // increment proposal count so next proposal gets the next higher id
         proposalCount = proposalCount.add(1);
@@ -499,7 +499,7 @@ contract BancorGovernance is Owned {
         govToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         // lock staker to avoid flashloans messing around with total votes
-        voteLocks[msg.sender] = Math.max(voteLocks[msg.sender], voteLock.div(10).add(block.number));
+        voteLocks[msg.sender] = Math.max(voteLocks[msg.sender], voteLockDuration.div(10).add(block.number));
 
         // emit staked event
         emit Staked(msg.sender, _amount);
@@ -557,8 +557,8 @@ contract BancorGovernance is Owned {
         proposals[_id].totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
         proposals[_id].quorum = calculateQuorumRatio(_id);
-        // lock sender
-        updateLock(proposals[_id].end);
+        // update vote lock
+        updateVoteLock(proposals[_id].end);
 
         // emit vote event
         emit Vote(_id, msg.sender, true, vote);
@@ -596,8 +596,8 @@ contract BancorGovernance is Owned {
         proposals[_id].totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
         proposals[_id].quorum = calculateQuorumRatio(_id);
-        // lock sender
-        updateLock(proposals[_id].end);
+        // update vote lock
+        updateVoteLock(proposals[_id].end);
 
         // emit vote event
         emit Vote(_id, msg.sender, false, vote);

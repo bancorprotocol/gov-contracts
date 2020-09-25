@@ -36,7 +36,7 @@ contract("BancorGovernance", async (accounts) => {
       const votesBefore = (await governance.votesOf(voter)).toString()
       assert.strictEqual(votesBefore, (0).toString())
       // reduce vote lock
-      await governance.setVoteLock(2, {from: owner})
+      await governance.setVoteLockDuration(2, {from: owner})
       // stake
       await stake(governance, govToken, voter, amount)
       // let some blocks pass
