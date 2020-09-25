@@ -254,6 +254,18 @@ contract BancorGovernance is Owned {
     }
 
     /**
+     * @notice Updates the lock on the sender
+     *
+     * @param _proposalEnd  the block number when the proposal ends
+     */
+    function updateLock(uint256 _proposalEnd) private onlyStaker {
+        voteLocks[msg.sender] = Math.max(
+            voteLocks[msg.sender],
+            Math.max(_proposalEnd, voteLock.add(block.number))
+        );
+    }
+
+    /**
      * @notice returns the quorum ratio of a proposal
      *
      * @param _id   proposal id
@@ -393,7 +405,7 @@ contract BancorGovernance is Owned {
         require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
 
         // create new proposal
-        proposals[proposalCount] = Proposal({
+        Proposal memory proposal = Proposal({
             id: proposalCount,
             proposer: msg.sender,
             totalVotesFor: 0,
@@ -409,11 +421,13 @@ contract BancorGovernance is Owned {
             executed: false
         });
 
+        proposals[proposalCount] = proposal;
+
         // emit proposal event
         emit NewProposal(proposalCount, msg.sender, block.number, voteDuration, _executor);
 
         // lock proposer
-        voteLocks[msg.sender] = voteLock.add(block.number);
+        updateLock(proposal.end);
 
         // increment proposal count so next proposal gets the next higher id
         proposalCount = proposalCount.add(1);
@@ -543,7 +557,7 @@ contract BancorGovernance is Owned {
         // recalculate quorum based on overall votes
         proposals[_id].quorum = calculateQuorumRatio(_id);
         // lock sender
-        voteLocks[msg.sender] = voteLock.add(block.number);
+        updateLock(proposals[_id].end);
 
         // emit vote event
         emit Vote(_id, msg.sender, true, vote);
@@ -578,7 +592,7 @@ contract BancorGovernance is Owned {
         // recalculate quorum based on overall votes
         proposals[_id].quorum = calculateQuorumRatio(_id);
         // lock sender
-        voteLocks[msg.sender] = voteLock.add(block.number);
+        updateLock(proposals[_id].end);
 
         // emit vote event
         emit Vote(_id, msg.sender, false, vote);
