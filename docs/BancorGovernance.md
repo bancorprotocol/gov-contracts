@@ -221,7 +221,7 @@ triggered when the quorum is updated
 
 
 
-### `VoteMinimumForProposalUpdated(uint256 _voteMinimumForProposal)`
+### `VoteMinimumUpdated(uint256 _voteMinimumForProposal)`
 
 triggered when the vote minimum is updated
 
