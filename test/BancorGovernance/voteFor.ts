@@ -155,7 +155,7 @@ contract("BancorGovernance", async (accounts) => {
 
     it("should fail to vote for an ended proposal", async () => {
       const amount = 2
-      const duration = 2
+      const duration = 5
       // stake
       await stake(governance, govToken, proposer, amount)
       // stake
