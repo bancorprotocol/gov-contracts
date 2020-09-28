@@ -365,6 +365,7 @@ contract BancorGovernance is Owned {
         ownerOnly
         greaterThanZero(_voteMinimum)
     {
+        require(_voteMinimum <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
         voteMinimum = _voteMinimum;
         emit VoteMinimumUpdated(_voteMinimum);
     }
