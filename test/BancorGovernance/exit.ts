@@ -1,5 +1,5 @@
 import {propose, stake} from "./utils"
-import {mine} from "../timeTravel"
+import {timeTravel} from "../timeTravel"
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
 
@@ -48,7 +48,8 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(governance, govToken, proposer, 2)
       // let some time pass
-      await mine(web3, 2)
+      // min lock is now 10 minutes
+      await timeTravel(web3, 11 * 60)
       // exit
       await governance.exit({from: proposer})
     })
@@ -65,7 +66,9 @@ contract("BancorGovernance", async (accounts) => {
       await stake(governance, govToken, voter, 1)
       // vote
       await governance.voteFor(proposalId, {from: voter})
-      await mine(web3, period)
+      // let some time pass
+      // min lock is now 10 minutes
+      await timeTravel(web3, 11 * 60)
       // exit
       await governance.exit({from: voter})
     })

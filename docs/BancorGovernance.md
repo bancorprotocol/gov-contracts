@@ -10,6 +10,20 @@ allows execution by staker only
 
 
 
+### `proposalExists(uint256 _id)`
+
+allows execution only when the proposal exists
+
+
+
+
+### `proposalOpen(uint256 _id)`
+
+allows execution only when the proposal is still open
+
+
+
+
 ### `proposalNotEnded(uint256 _id)`
 
 allows execution only when the proposal with given id is open
@@ -39,7 +53,7 @@ used to initialize a new BancorGovernance contract
 
 
 
-### `calculateQuorumRatio(uint256 _id) → uint256` (internal)
+### `calculateQuorumRatio(struct BancorGovernance.Proposal _proposal) → uint256` (internal)
 
 returns the quorum ratio of a proposal
 
@@ -101,7 +115,7 @@ updates the proposals voting duration
 
 
 
-### `setVoteLock(uint256 _voteLock)` (public)
+### `setVoteLockDuration(uint256 _duration)` (public)
 
 updates the post vote lock duration
 
@@ -158,7 +172,7 @@ votes against a proposal
 
 
 
-### `NewProposal(uint256 _id, address _creator, uint256 _start, uint256 _duration, address _executor)`
+### `NewProposal(uint256 _id, uint256 _start, uint256 _duration, address _proposer, address _executor)`
 
 triggered when a new proposal is created
 
@@ -200,30 +214,30 @@ triggered when a user votes on a proposal
 
 
 
-### `QuorumChanged(uint256 _quorum)`
+### `QuorumUpdated(uint256 _quorum)`
 
-triggered when the quorum is changed
-
-
-
-
-### `VoteMinimumChanged(uint256 _voteMinimum)`
-
-triggered when the vote minimum is changed
+triggered when the quorum is updated
 
 
 
 
-### `VoteDurationChanged(uint256 _voteDuration)`
+### `VoteMinimumUpdated(uint256 _voteMinimum)`
 
-triggered when the vote duration is changed
-
-
+triggered when the vote minimum is updated
 
 
-### `VoteLockChanged(uint256 _voteLock)`
 
-triggered when the vote lock is changed
+
+### `VoteDurationUpdated(uint256 _voteDuration)`
+
+triggered when the vote duration is updated
+
+
+
+
+### `VoteLockDurationUpdated(uint256 _duration)`
+
+triggered when the vote lock duration is updated
 
 
 

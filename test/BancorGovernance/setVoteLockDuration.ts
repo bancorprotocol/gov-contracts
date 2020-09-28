@@ -24,12 +24,15 @@ contract("BancorGovernance", async (accounts) => {
   describe("#setVoteLockDuration()", async () => {
     it("should set vote lock from owner", async () => {
       const voteLockDurationBefore = await governance.voteLockDuration.call()
-      assert.strictEqual((17280).toString(), voteLockDurationBefore.toString())
+      assert.strictEqual((259200).toString(), voteLockDurationBefore.toString())
 
       const voteLockDuration = 5
-      await governance.setVoteLockDuration((voteLockDuration * decimals).toString(), {
-        from: owner,
-      })
+      await governance.setVoteLockDuration(
+        (voteLockDuration * decimals).toString(),
+        {
+          from: owner,
+        }
+      )
 
       const voteLockDurationAfter = await governance.voteLockDuration.call()
       assert.strictEqual(

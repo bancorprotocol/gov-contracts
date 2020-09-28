@@ -11,10 +11,13 @@ contract("BancorGovernance", async (accounts) => {
   let govToken: any
 
   const owner = accounts[0]
+  const bagHolder = accounts[1]
   const someone = accounts[5]
 
   before(async () => {
     govToken = await TestToken.new()
+
+    await govToken.mint(bagHolder, (10 * decimals).toString(), {from: owner})
   })
 
   beforeEach(async () => {
@@ -38,12 +41,23 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
-    it("should fail to set minimum lock to 0", async () => {
+    it("should fail to set minimum to 0", async () => {
       await truffleAssert.fails(
         // set vote minimum
         governance.setVoteMinimum((0).toString(), {from: owner}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ZERO_VALUE"
+      )
+    })
+
+    it("should fail to set minimum lock to more than total supply", async () => {
+      await truffleAssert.fails(
+        // set vote minimum
+        governance.setVoteMinimum((100 * decimals).toString(), {
+          from: owner,
+        }),
+        truffleAssert.ErrorType.REVERT,
+        "ERR_EXCEEDS_TOTAL_SUPPLY"
       )
     })
 

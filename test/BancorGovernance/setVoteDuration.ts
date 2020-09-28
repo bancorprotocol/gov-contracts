@@ -24,18 +24,15 @@ contract("BancorGovernance", async (accounts) => {
   describe("#setVoteDuration()", async () => {
     it("should set vote duration from owner", async () => {
       const voteDurationBefore = await governance.voteDuration.call()
-      assert.strictEqual((17280).toString(), voteDurationBefore.toString())
+      assert.strictEqual((259200).toString(), voteDurationBefore.toString())
 
       const voteDuration = 5
-      await governance.setVoteDuration((voteDuration * decimals).toString(), {
+      await governance.setVoteDuration(voteDuration.toString(), {
         from: owner,
       })
 
       const voteDurationAfter = await governance.voteDuration.call()
-      assert.strictEqual(
-        (voteDuration * decimals).toString(),
-        voteDurationAfter.toString()
-      )
+      assert.strictEqual(voteDuration.toString(), voteDurationAfter.toString())
     })
 
     it("should fail to set vote duration to 0", async () => {

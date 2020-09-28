@@ -1,4 +1,4 @@
-import {mine} from "../timeTravel"
+import {timeTravel} from "../timeTravel"
 import {propose, stake} from "./utils"
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
@@ -55,7 +55,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter1})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       // execute
       const {logs, blockNumber} = await governance.execute(proposalId, {
         from: executor,
@@ -91,7 +91,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter1})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       {
         // tally votes
         const {logs} = await governance.tallyVotes(proposalId, {from: someone})
@@ -145,7 +145,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter2})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       // fail
       await truffleAssert.fails(
         // execute
@@ -161,7 +161,7 @@ contract("BancorGovernance", async (accounts) => {
         // execute
         governance.execute("0x1337", {from: executor}),
         truffleAssert.ErrorType.REVERT,
-        "ERR_NO_PROPOSAL"
+        "ERR_INVALID_ID"
       )
     })
 
@@ -181,7 +181,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter1})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       // exit
       const {blockNumber} = await governance.execute(proposalId, {
         from: executor,

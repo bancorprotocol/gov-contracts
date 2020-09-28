@@ -1,4 +1,4 @@
-import {mine} from "../timeTravel"
+import {timeTravel} from "../timeTravel"
 import {propose, stake} from "./utils"
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
@@ -47,7 +47,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter1})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       // tally votes
       const {logs} = await governance.tallyVotes(proposalId, {from: someone})
       // check that proposal has completed
@@ -68,7 +68,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter1})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       // tally votes
       await governance.tallyVotes(proposalId, {from: someone})
       // fail
@@ -97,7 +97,7 @@ contract("BancorGovernance", async (accounts) => {
       // vote
       await governance.voteFor(proposalId, {from: voter2})
       // mine blocks
-      await mine(web3, duration)
+      await timeTravel(web3, duration + 1)
       // tally votes
       const {logs} = await governance.tallyVotes(proposalId, {from: someone})
       // check that proposal has completed

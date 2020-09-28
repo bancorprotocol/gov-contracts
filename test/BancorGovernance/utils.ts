@@ -1,3 +1,5 @@
+import {timeTravel} from "../timeTravel"
+
 const decimals = 1e18
 
 export const stake = async (
@@ -33,6 +35,8 @@ export const propose = async (
 
   const proposalCountAfter = (await governance.proposalCount.call()).toNumber()
   assert.strictEqual(proposalCountAfter, proposalCountBefore + 1)
+
+  await timeTravel(web3, 1)
 
   return logs[0].args._id.toString()
 }
