@@ -27,9 +27,12 @@ contract("BancorGovernance", async (accounts) => {
       assert.strictEqual((17280).toString(), voteLockDurationBefore.toString())
 
       const voteLockDuration = 5
-      await governance.setVoteLockDuration((voteLockDuration * decimals).toString(), {
-        from: owner,
-      })
+      await governance.setVoteLockDuration(
+        (voteLockDuration * decimals).toString(),
+        {
+          from: owner,
+        }
+      )
 
       const voteLockDurationAfter = await governance.voteLockDuration.call()
       assert.strictEqual(

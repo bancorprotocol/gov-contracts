@@ -27,14 +27,14 @@ contract("BancorGovernance", async (accounts) => {
       assert.strictEqual((200000).toString(), quorumBefore.toString())
 
       const quorum = 5
-      await governance.setQuorum((quorum * digits).toString(), { from: owner })
+      await governance.setQuorum((quorum * digits).toString(), {from: owner})
 
       const quorumAfter = await governance.quorum.call()
       assert.strictEqual((quorum * digits).toString(), quorumAfter.toString())
     })
 
     it("should set quorum to 100", async () => {
-      await governance.setQuorum((100 * digits).toString(), { from: owner })
+      await governance.setQuorum((100 * digits).toString(), {from: owner})
       const quorumAfter = await governance.quorum.call()
       assert.strictEqual((100 * digits).toString(), quorumAfter.toString())
     })
@@ -42,7 +42,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to set quorum to 0", async () => {
       await truffleAssert.fails(
         // set quorum
-        governance.setQuorum((0).toString(), { from: owner }),
+        governance.setQuorum((0).toString(), {from: owner}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ZERO_VALUE"
       )
@@ -51,7 +51,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to set quorum to 110", async () => {
       await truffleAssert.fails(
         // set quorum
-        governance.setQuorum((110 * digits).toString(), { from: owner }),
+        governance.setQuorum((110 * digits).toString(), {from: owner}),
         truffleAssert.ErrorType.REVERT,
         "ERR_QUORUM_TOO_HIGH"
       )
@@ -60,7 +60,7 @@ contract("BancorGovernance", async (accounts) => {
     it("should fail to set quorum from someone", async () => {
       await truffleAssert.fails(
         // set quorum
-        governance.setQuorum((0).toString(), { from: someone }),
+        governance.setQuorum((0).toString(), {from: someone}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ACCESS_DENIED"
       )

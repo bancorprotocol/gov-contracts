@@ -1,6 +1,6 @@
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
-import { utils } from "ethers"
+import {utils} from "ethers"
 
 contract("BancorGovernance", async () => {
   const BancorGovernance = artifacts.require("BancorGovernance")
