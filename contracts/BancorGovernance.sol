@@ -55,20 +55,20 @@ contract BancorGovernance is Owned {
 
     struct Proposal {
         uint256 id;
-        address proposer;
         mapping(address => uint256) votesFor;
         mapping(address => uint256) votesAgainst;
         uint256 totalVotesFor;
         uint256 totalVotesAgainst;
         uint256 start; // block start;
         uint256 end; // start + voteDuration
-        address executor;
-        string hash;
         uint256 totalAvailableVotes;
         uint256 quorum;
         uint256 quorumRequired;
         bool open;
         bool executed;
+        address proposer;
+        address executor;
+        string hash;
     }
 
     /**
@@ -82,9 +82,9 @@ contract BancorGovernance is Owned {
      */
     event NewProposal(
         uint256 indexed _id,
-        address _creator,
         uint256 _start,
         uint256 _duration,
+        address _creator,
         address _executor
     );
 
@@ -424,7 +424,7 @@ contract BancorGovernance is Owned {
         proposals[proposalCount] = proposal;
 
         // emit proposal event
-        emit NewProposal(proposalCount, msg.sender, block.number, voteDuration, _executor);
+        emit NewProposal(proposalCount, block.number, voteDuration, msg.sender, _executor);
 
         // lock proposer
         updateVoteLock(proposal.end);
