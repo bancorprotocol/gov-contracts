@@ -147,9 +147,9 @@ contract BancorGovernance is Owned {
     /**
      * @notice triggered when the vote minimum is updated
      *
-     * @param _voteMinimum  the new vote minimum
+     * @param _voteMinimumForProposal  the new vote minimum
      */
-    event VoteMinimumUpdated(uint256 _voteMinimum);
+    event VoteMinimumForProposalUpdated(uint256 _voteMinimumForProposal);
 
     /**
      * @notice triggered when the vote duration is updated
@@ -171,8 +171,8 @@ contract BancorGovernance is Owned {
     uint256 public voteDuration = 17280;
     // vote lock in blocks, 3 days = ~17280 for 15s/block
     uint256 public voteLockDuration = 17280;
-    // minimum stake required
-    uint256 public voteMinimum = 1e18;
+    // minimum stake required to propose
+    uint256 public voteMinimumForProposal = 1e18;
     // quorum needed for a proposal to pass, default = 20%
     uint256 public quorum = 200000;
     // sum of current total votes
@@ -267,9 +267,7 @@ contract BancorGovernance is Owned {
      */
     function calculateQuorumRatio(Proposal memory _proposal) internal view returns (uint256) {
         // calculate overall votes
-        uint256 totalProposalVotes = _proposal.totalVotesFor.add(
-            _proposal.totalVotesAgainst
-        );
+        uint256 totalProposalVotes = _proposal.totalVotesFor.add(_proposal.totalVotesAgainst);
 
         return totalProposalVotes.mul(PPM_RESOLUTION).div(totalVotes);
     }
@@ -289,7 +287,15 @@ contract BancorGovernance is Owned {
      * @return votes against ratio
      * @return quorum ratio
      */
-    function proposalStats(uint256 _id) public view returns (uint256, uint256, uint256) {
+    function proposalStats(uint256 _id)
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         Proposal memory proposal = proposals[_id];
 
         uint256 forRatio = proposal.totalVotesFor;
@@ -302,7 +308,9 @@ contract BancorGovernance is Owned {
         // calculate against votes ratio
         againstRatio = againstRatio.mul(PPM_RESOLUTION).div(totalProposalVotes);
         // calculate quorum ratio
-        uint256 quorumRatio = totalProposalVotes.mul(PPM_RESOLUTION).div(proposal.totalAvailableVotes);
+        uint256 quorumRatio = totalProposalVotes.mul(PPM_RESOLUTION).div(
+            proposal.totalAvailableVotes
+        );
 
         return (forRatio, againstRatio, quorumRatio);
     }
@@ -344,11 +352,7 @@ contract BancorGovernance is Owned {
      *
      * @param _quorum required quorum
      */
-    function setQuorum(uint256 _quorum)
-        public
-        ownerOnly
-        greaterThanZero(_quorum)
-    {
+    function setQuorum(uint256 _quorum) public ownerOnly greaterThanZero(_quorum) {
         // check quorum for not being above 100
         require(_quorum / 10000 <= 100, "ERR_QUORUM_TOO_HIGH");
 
@@ -359,16 +363,16 @@ contract BancorGovernance is Owned {
     /**
      * @notice updates the required votes needed to propose
      *
-     * @param _voteMinimum required minimum votes
+     * @param _voteMinimumForProposal required minimum votes
      */
-    function setVoteMinimum(uint256 _voteMinimum)
+    function setVoteMinimumForProposal(uint256 _voteMinimumForProposal)
         public
         ownerOnly
-        greaterThanZero(_voteMinimum)
+        greaterThanZero(_voteMinimumForProposal)
     {
-        require(_voteMinimum <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
-        voteMinimum = _voteMinimum;
-        emit VoteMinimumUpdated(_voteMinimum);
+        require(_voteMinimumForProposal <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
+        voteMinimumForProposal = _voteMinimumForProposal;
+        emit VoteMinimumForProposalUpdated(_voteMinimumForProposal);
     }
 
     /**
@@ -390,11 +394,7 @@ contract BancorGovernance is Owned {
      *
      * @param _duration new vote lock duration
      */
-    function setVoteLockDuration(uint256 _duration)
-        public
-        ownerOnly
-        greaterThanZero(_duration)
-    {
+    function setVoteLockDuration(uint256 _duration) public ownerOnly greaterThanZero(_duration) {
         voteLockDuration = _duration;
         emit VoteLockDurationUpdated(_duration);
     }
@@ -406,7 +406,7 @@ contract BancorGovernance is Owned {
      * @param _hash ipfs hash of the proposal description
      */
     function propose(address _executor, string memory _hash) public {
-        require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
+        require(votesOf(msg.sender) > voteMinimumForProposal, "ERR_NOT_VOTE_MINIMUM");
 
         // create new proposal
         Proposal memory proposal = Proposal({
@@ -506,7 +506,10 @@ contract BancorGovernance is Owned {
         govToken.safeTransferFrom(msg.sender, address(this), _amount);
 
         // lock staker to avoid flashloans messing around with total votes
-        voteLocks[msg.sender] = Math.max(voteLocks[msg.sender], voteLockDuration.div(10).add(block.number));
+        voteLocks[msg.sender] = Math.max(
+            voteLocks[msg.sender],
+            voteLockDuration.div(10).add(block.number)
+        );
 
         // emit staked event
         emit Staked(msg.sender, _amount);
@@ -536,11 +539,7 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote for
      */
-    function voteFor(uint256 _id)
-        public
-        onlyStaker
-        proposalNotEnded(_id)
-    {
+    function voteFor(uint256 _id) public onlyStaker proposalNotEnded(_id) {
         // mark sender as voter
         voters[msg.sender] = true;
 
@@ -578,11 +577,7 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote against
      */
-    function voteAgainst(uint256 _id)
-        public
-        onlyStaker
-        proposalNotEnded(_id)
-    {
+    function voteAgainst(uint256 _id) public onlyStaker proposalNotEnded(_id) {
         // mark sender as voter
         voters[msg.sender] = true;
 
