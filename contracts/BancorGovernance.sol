@@ -213,14 +213,34 @@ contract BancorGovernance is Owned {
     }
 
     /**
+     * @notice allows execution only when the proposal exists
+     *
+     * @param _id   proposal id
+     */
+    modifier proposalExists(uint256 _id) {
+        Proposal memory proposal = proposals[_id];
+        require(proposal.start > 0 && proposal.start < block.number, "ERR_NO_PROPOSAL");
+        _;
+    }
+
+    /**
+     * @notice allows execution only when the proposal is still open
+     *
+     * @param _id   proposal id
+     */
+    modifier proposalOpen(uint256 _id) {
+        Proposal memory proposal = proposals[_id];
+        require(proposal.open, "ERR_NOT_OPEN");
+        _;
+    }
+
+    /**
      * @notice allows execution only when the proposal with given id is open
      *
      * @param _id   proposal id
      */
     modifier proposalNotEnded(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.start > 0 && proposal.start < block.number, "ERR_NO_PROPOSAL");
-        require(proposal.open, "ERR_NOT_OPEN");
         require(proposal.end > block.number, "ERR_ENDED");
         _;
     }
@@ -232,7 +252,6 @@ contract BancorGovernance is Owned {
      */
     modifier proposalEnded(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.start > 0 && proposal.start < block.number, "ERR_NO_PROPOSAL");
         require(proposal.end < block.number, "ERR_NOT_ENDED");
         _;
     }
@@ -498,7 +517,7 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to execute
      */
-    function execute(uint256 _id) public proposalEnded(_id) {
+    function execute(uint256 _id) public proposalExists(_id) proposalEnded(_id) {
         // check for executed status
         require(!proposals[_id].executed, "ERR_ALREADY_EXECUTED");
 
@@ -528,19 +547,17 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to tally votes for
      */
-    function tallyVotes(uint256 _id) public proposalEnded(_id) {
-        // only tally votes for proposals that are open
-        require(proposals[_id].open, "ERR_NOT_OPEN");
-
+    function tallyVotes(uint256 _id)
+        public
+        proposalExists(_id)
+        proposalOpen(_id)
+        proposalEnded(_id)
+    {
         // get voting info of proposal
         (uint256 forRatio, uint256 againstRatio, ) = proposalStats(_id);
-        // assume we have no quorum
-        bool quorumReached = false;
-        // do we have a quorum?
-        if (proposals[_id].quorum >= proposals[_id].quorumRequired) {
-            quorumReached = true;
-        }
 
+        // do we have a quorum?
+        bool quorumReached = proposals[_id].quorum >= proposals[_id].quorumRequired;
         // close proposal
         proposals[_id].open = false;
 
@@ -595,7 +612,13 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote for
      */
-    function voteFor(uint256 _id) public onlyStaker proposalNotEnded(_id) {
+    function voteFor(uint256 _id)
+        public
+        onlyStaker
+        proposalExists(_id)
+        proposalOpen(_id)
+        proposalNotEnded(_id)
+    {
         Proposal storage proposal = proposals[_id];
         vote(proposal, true);
     }
@@ -605,7 +628,13 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote against
      */
-    function voteAgainst(uint256 _id) public onlyStaker proposalNotEnded(_id) {
+    function voteAgainst(uint256 _id)
+        public
+        onlyStaker
+        proposalExists(_id)
+        proposalOpen(_id)
+        proposalNotEnded(_id)
+    {
         Proposal storage proposal = proposals[_id];
         vote(proposal, false);
     }
