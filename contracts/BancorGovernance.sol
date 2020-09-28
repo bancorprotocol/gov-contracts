@@ -107,9 +107,9 @@ contract BancorGovernance is Owned {
      * @notice triggered when a proposal was successfully executed
      *
      * @param _id       proposal id
-     * @param _executor contract that will exeecute the proposal once it passes
+     * @param _executor contract that will execute the proposal once it passes
      */
-    event ProposalExecuted(uint256 indexed _id, address _executor);
+    event ProposalExecuted(uint256 indexed _id, address indexed _executor);
 
     /**
      * @notice triggered when a stake has been added to the contract
