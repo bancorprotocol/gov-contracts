@@ -221,7 +221,7 @@ contract BancorGovernance is Owned {
      */
     modifier proposalExists(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.start > 0 && proposal.start < block.timestamp, "ERR_NO_PROPOSAL");
+        require(proposal.start > 0 && proposal.start < block.timestamp, "ERR_INVALID_ID");
         _;
     }
 

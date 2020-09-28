@@ -161,7 +161,7 @@ contract("BancorGovernance", async (accounts) => {
         // execute
         governance.execute("0x1337", {from: executor}),
         truffleAssert.ErrorType.REVERT,
-        "ERR_NO_PROPOSAL"
+        "ERR_INVALID_ID"
       )
     })
 

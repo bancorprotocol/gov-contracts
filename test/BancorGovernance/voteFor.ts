@@ -116,7 +116,7 @@ contract("BancorGovernance", async (accounts) => {
         // vote for
         governance.voteFor("0x1337", {from: voter}),
         truffleAssert.ErrorType.REVERT,
-        "ERR_NO_PROPOSAL"
+        "ERR_INVALID_ID"
       )
     })
 
