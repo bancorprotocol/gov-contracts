@@ -348,6 +348,9 @@ contract BancorGovernance is Owned {
         ownerOnly
         greaterThanZero(_quorum)
     {
+        // check quorum for not being above 100
+        require(_quorum / 10000 <= 100, "ERR_QUORUM_TOO_HIGH");
+
         quorum = _quorum;
         emit QuorumUpdated(_quorum);
     }
