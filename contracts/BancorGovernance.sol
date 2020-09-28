@@ -218,9 +218,10 @@ contract BancorGovernance is Owned {
      * @param _id   proposal id
      */
     modifier proposalNotEnded(uint256 _id) {
-        require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
-        require(proposals[_id].open, "ERR_NOT_OPEN");
-        require(proposals[_id].end > block.number, "ERR_ENDED");
+        Proposal memory proposal = proposals[_id];
+        require(proposal.start > 0 && proposal.start < block.number, "ERR_NO_PROPOSAL");
+        require(proposal.open, "ERR_NOT_OPEN");
+        require(proposal.end > block.number, "ERR_ENDED");
         _;
     }
 
@@ -230,8 +231,9 @@ contract BancorGovernance is Owned {
      * @param _id   proposal id
      */
     modifier proposalEnded(uint256 _id) {
-        require(proposals[_id].start > 0 && proposals[_id].start < block.number, "ERR_NO_PROPOSAL");
-        require(proposals[_id].end < block.number, "ERR_NOT_ENDED");
+        Proposal memory proposal = proposals[_id];
+        require(proposal.start > 0 && proposal.start < block.number, "ERR_NO_PROPOSAL");
+        require(proposal.end < block.number, "ERR_NOT_ENDED");
         _;
     }
 
@@ -260,13 +262,13 @@ contract BancorGovernance is Owned {
     /**
      * @notice returns the quorum ratio of a proposal
      *
-     * @param _id   proposal id
+     * @param _proposal   proposal
      * @return quorum ratio
      */
-    function calculateQuorumRatio(uint256 _id) internal view returns (uint256) {
+    function calculateQuorumRatio(Proposal memory _proposal) internal view returns (uint256) {
         // calculate overall votes
-        uint256 totalProposalVotes = proposals[_id].totalVotesFor.add(
-            proposals[_id].totalVotesAgainst
+        uint256 totalProposalVotes = _proposal.totalVotesFor.add(
+            _proposal.totalVotesAgainst
         );
 
         return totalProposalVotes.mul(PPM_RESOLUTION).div(totalVotes);
@@ -288,8 +290,10 @@ contract BancorGovernance is Owned {
      * @return quorum ratio
      */
     function proposalStats(uint256 _id) public view returns (uint256, uint256, uint256) {
-        uint256 forRatio = proposals[_id].totalVotesFor;
-        uint256 againstRatio = proposals[_id].totalVotesAgainst;
+        Proposal memory proposal = proposals[_id];
+
+        uint256 forRatio = proposal.totalVotesFor;
+        uint256 againstRatio = proposal.totalVotesAgainst;
 
         // calculate overall total votes
         uint256 totalProposalVotes = forRatio.add(againstRatio);
@@ -298,7 +302,7 @@ contract BancorGovernance is Owned {
         // calculate against votes ratio
         againstRatio = againstRatio.mul(PPM_RESOLUTION).div(totalProposalVotes);
         // calculate quorum ratio
-        uint256 quorumRatio = totalProposalVotes.mul(PPM_RESOLUTION).div(proposals[_id].totalAvailableVotes);
+        uint256 quorumRatio = totalProposalVotes.mul(PPM_RESOLUTION).div(proposal.totalAvailableVotes);
 
         return (forRatio, againstRatio, quorumRatio);
     }
@@ -561,7 +565,7 @@ contract BancorGovernance is Owned {
         // update total votes available on the proposal
         proposal.totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
-        proposal.quorum = calculateQuorumRatio(_id);
+        proposal.quorum = calculateQuorumRatio(proposal);
         // update vote lock
         updateVoteLock(proposal.end);
 
@@ -602,7 +606,7 @@ contract BancorGovernance is Owned {
         // update total votes available on the proposal
         proposal.totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
-        proposal.quorum = calculateQuorumRatio(_id);
+        proposal.quorum = calculateQuorumRatio(proposal);
         // update vote lock
         updateVoteLock(proposal.end);
 
