@@ -43,7 +43,6 @@ contract("BancorGovernance", async (accounts) => {
     })
 
     it("should be able to exit when not voted after some time", async () => {
-
       // lower the vote lock
       await governance.setVoteLockDuration(2, {from: owner})
       // stake
