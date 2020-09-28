@@ -75,16 +75,16 @@ contract BancorGovernance is Owned {
      * @notice triggered when a new proposal is created
      *
      * @param _id       proposal id
-     * @param _creator  proposal creator
      * @param _start    voting start block
      * @param _duration voting duration
+     * @param _proposer proposal creator
      * @param _executor contract that will exeecute the proposal once it passes
      */
     event NewProposal(
         uint256 indexed _id,
         uint256 _start,
         uint256 _duration,
-        address _creator,
+        address _proposer,
         address _executor
     );
 
@@ -485,9 +485,14 @@ contract BancorGovernance is Owned {
     function propose(address _executor, string memory _hash) public {
         require(votesOf(msg.sender) > voteMinimumForProposal, "ERR_NOT_VOTE_MINIMUM");
 
+        uint256 id = proposalCount;
+
+        // increment proposal count so next proposal gets the next higher id
+        proposalCount = proposalCount.add(1);
+
         // create new proposal
         Proposal memory proposal = Proposal({
-            id: proposalCount,
+            id: id,
             proposer: msg.sender,
             totalVotesFor: 0,
             totalVotesAgainst: 0,
@@ -502,16 +507,13 @@ contract BancorGovernance is Owned {
             executed: false
         });
 
-        proposals[proposalCount] = proposal;
-
-        // emit proposal event
-        emit NewProposal(proposalCount, block.timestamp, voteDuration, msg.sender, _executor);
+        proposals[id] = proposal;
 
         // lock proposer
         updateVoteLock(proposal.end);
 
-        // increment proposal count so next proposal gets the next higher id
-        proposalCount = proposalCount.add(1);
+        // emit proposal event
+        emit NewProposal(id, proposal.start, voteDuration, proposal.proposer, proposal.executor);
     }
 
     /**
