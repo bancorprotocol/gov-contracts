@@ -147,9 +147,9 @@ contract BancorGovernance is Owned {
     /**
      * @notice triggered when the vote minimum is updated
      *
-     * @param _voteMinimumForProposal  the new vote minimum
+     * @param _voteMinimum  the new vote minimum
      */
-    event VoteMinimumUpdated(uint256 _voteMinimumForProposal);
+    event VoteMinimumUpdated(uint256 _voteMinimum);
 
     /**
      * @notice triggered when the vote duration is updated
@@ -174,7 +174,7 @@ contract BancorGovernance is Owned {
     // the fraction of vote lock used to lock voter to avoid rapid unstaking
     uint256 public constant voteLockFraction = 10;
     // minimum stake required to propose
-    uint256 public voteMinimumForProposal = 1e18;
+    uint256 public voteMinimum = 1e18;
     // quorum needed for a proposal to pass, default = 20%
     uint256 public quorum = 200000;
     // sum of current total votes
@@ -448,16 +448,12 @@ contract BancorGovernance is Owned {
     /**
      * @notice updates the required votes needed to propose
      *
-     * @param _voteMinimumForProposal required minimum votes
+     * @param _voteMinimum required minimum votes
      */
-    function setVoteMinimumForProposal(uint256 _voteMinimumForProposal)
-        public
-        ownerOnly
-        greaterThanZero(_voteMinimumForProposal)
-    {
-        require(_voteMinimumForProposal <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
-        voteMinimumForProposal = _voteMinimumForProposal;
-        emit VoteMinimumUpdated(_voteMinimumForProposal);
+    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly greaterThanZero(_voteMinimum) {
+        require(_voteMinimum <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
+        voteMinimum = _voteMinimum;
+        emit VoteMinimumUpdated(_voteMinimum);
     }
 
     /**
@@ -491,7 +487,7 @@ contract BancorGovernance is Owned {
      * @param _hash ipfs hash of the proposal description
      */
     function propose(address _executor, string memory _hash) public {
-        require(votesOf(msg.sender) > voteMinimumForProposal, "ERR_NOT_VOTE_MINIMUM");
+        require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
 
         uint256 id = proposalCount;
 
