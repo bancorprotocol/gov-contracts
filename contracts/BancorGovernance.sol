@@ -149,7 +149,7 @@ contract BancorGovernance is Owned {
      *
      * @param _voteMinimumForProposal  the new vote minimum
      */
-    event VoteMinimumForProposalUpdated(uint256 _voteMinimumForProposal);
+    event VoteMinimumUpdated(uint256 _voteMinimumForProposal);
 
     /**
      * @notice triggered when the vote duration is updated
@@ -449,7 +449,7 @@ contract BancorGovernance is Owned {
     {
         require(_voteMinimumForProposal <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
         voteMinimumForProposal = _voteMinimumForProposal;
-        emit VoteMinimumForProposalUpdated(_voteMinimumForProposal);
+        emit VoteMinimumUpdated(_voteMinimumForProposal);
     }
 
     /**
