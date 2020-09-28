@@ -171,6 +171,8 @@ contract BancorGovernance is Owned {
     uint256 public voteDuration = 17280;
     // vote lock in blocks, 3 days = ~17280 for 15s/block
     uint256 public voteLockDuration = 17280;
+    // the fraction of vote lock used to lock voter to avoid rapid unstaking
+    uint256 public constant voteLockFraction = 10;
     // minimum stake required to propose
     uint256 public voteMinimumForProposal = 1e18;
     // quorum needed for a proposal to pass, default = 20%
@@ -581,7 +583,7 @@ contract BancorGovernance is Owned {
         // lock staker to avoid flashloans messing around with total votes
         voteLocks[msg.sender] = Math.max(
             voteLocks[msg.sender],
-            voteLockDuration.div(10).add(block.number)
+            voteLockDuration.div(voteLockFraction).add(block.number)
         );
 
         // emit staked event
