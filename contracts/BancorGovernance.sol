@@ -168,9 +168,9 @@ contract BancorGovernance is Owned {
     // PROPOSALS
 
     // voting duration in blocks, 3 days = ~17280 for 15s/block
-    uint256 public voteDuration = 17280;
+    uint256 public voteDuration = 3 days;
     // vote lock in blocks, 3 days = ~17280 for 15s/block
-    uint256 public voteLockDuration = 17280;
+    uint256 public voteLockDuration = 3 days;
     // the fraction of vote lock used to lock voter to avoid rapid unstaking
     uint256 public constant voteLockFraction = 10;
     // minimum stake required to propose
@@ -221,7 +221,7 @@ contract BancorGovernance is Owned {
      */
     modifier proposalExists(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.start > 0 && proposal.start < block.number, "ERR_NO_PROPOSAL");
+        require(proposal.start > 0 && proposal.start < block.timestamp, "ERR_NO_PROPOSAL");
         _;
     }
 
@@ -243,7 +243,7 @@ contract BancorGovernance is Owned {
      */
     modifier proposalNotEnded(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.end > block.number, "ERR_ENDED");
+        require(proposal.end > block.timestamp, "ERR_ENDED");
         _;
     }
 
@@ -254,7 +254,7 @@ contract BancorGovernance is Owned {
      */
     modifier proposalEnded(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.end < block.number, "ERR_NOT_ENDED");
+        require(proposal.end < block.timestamp, "ERR_NOT_ENDED");
         _;
     }
 
@@ -276,7 +276,7 @@ contract BancorGovernance is Owned {
     function updateVoteLock(uint256 _proposalEnd) private onlyStaker {
         voteLocks[msg.sender] = Math.max(
             voteLocks[msg.sender],
-            Math.max(_proposalEnd, voteLockDuration.add(block.number))
+            Math.max(_proposalEnd, voteLockDuration.add(block.timestamp))
         );
     }
 
@@ -491,8 +491,8 @@ contract BancorGovernance is Owned {
             proposer: msg.sender,
             totalVotesFor: 0,
             totalVotesAgainst: 0,
-            start: block.number,
-            end: voteDuration.add(block.number),
+            start: block.timestamp,
+            end: voteDuration.add(block.timestamp),
             executor: _executor,
             hash: _hash,
             totalAvailableVotes: totalVotes,
@@ -505,7 +505,7 @@ contract BancorGovernance is Owned {
         proposals[proposalCount] = proposal;
 
         // emit proposal event
-        emit NewProposal(proposalCount, block.number, voteDuration, msg.sender, _executor);
+        emit NewProposal(proposalCount, block.timestamp, voteDuration, msg.sender, _executor);
 
         // lock proposer
         updateVoteLock(proposal.end);
@@ -583,7 +583,7 @@ contract BancorGovernance is Owned {
         // lock staker to avoid flashloans messing around with total votes
         voteLocks[msg.sender] = Math.max(
             voteLocks[msg.sender],
-            voteLockDuration.div(voteLockFraction).add(block.number)
+            voteLockDuration.div(voteLockFraction).add(block.timestamp)
         );
 
         // emit staked event
@@ -596,7 +596,7 @@ contract BancorGovernance is Owned {
      * @param _amount amount of vote tokens to unstake
      */
     function unstake(uint256 _amount) public greaterThanZero(_amount) {
-        require(voteLocks[msg.sender] < block.number, "ERR_LOCKED");
+        require(voteLocks[msg.sender] < block.timestamp, "ERR_LOCKED");
 
         // reduce votes for user
         votes[msg.sender] = votesOf(msg.sender).sub(_amount);
