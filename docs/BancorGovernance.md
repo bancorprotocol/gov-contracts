@@ -10,6 +10,20 @@ allows execution by staker only
 
 
 
+### `proposalExists(uint256 _id)`
+
+allows execution only when the proposal exists
+
+
+
+
+### `proposalOpen(uint256 _id)`
+
+allows execution only when the proposal is still open
+
+
+
+
 ### `proposalNotEnded(uint256 _id)`
 
 allows execution only when the proposal with given id is open
@@ -158,7 +172,7 @@ votes against a proposal
 
 
 
-### `NewProposal(uint256 _id, uint256 _start, uint256 _duration, address _creator, address _executor)`
+### `NewProposal(uint256 _id, uint256 _start, uint256 _duration, address _proposer, address _executor)`
 
 triggered when a new proposal is created
 
