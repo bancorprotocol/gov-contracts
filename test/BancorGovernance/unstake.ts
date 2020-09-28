@@ -40,7 +40,8 @@ contract("BancorGovernance", async (accounts) => {
       // stake
       await stake(governance, govToken, voter, amount)
       // let some blocks pass
-      await timeTravel(web3, 2)
+      // min lock time is now 10 minutes
+      await timeTravel(web3, 11 * 60)
       // unstake
       await governance.unstake((amount * decimals).toString(), {from: voter})
     })

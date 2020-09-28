@@ -583,7 +583,7 @@ contract BancorGovernance is Owned {
         // lock staker to avoid flashloans messing around with total votes
         voteLocks[msg.sender] = Math.max(
             voteLocks[msg.sender],
-            voteLockDuration.div(voteLockFraction).add(block.timestamp)
+            Math.max(voteLockDuration.div(voteLockFraction), 10 minutes).add(block.timestamp)
         );
 
         // emit staked event
