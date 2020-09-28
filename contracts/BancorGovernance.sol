@@ -167,9 +167,9 @@ contract BancorGovernance is Owned {
 
     // PROPOSALS
 
-    // voting duration in blocks, 3 days = ~17280 for 15s/block
+    // voting duration in seconds
     uint256 public voteDuration = 3 days;
-    // vote lock in blocks, 3 days = ~17280 for 15s/block
+    // vote lock in seconds
     uint256 public voteLockDuration = 3 days;
     // the fraction of vote lock used to lock voter to avoid rapid unstaking
     uint256 public constant voteLockFraction = 10;
