@@ -543,28 +543,30 @@ contract BancorGovernance is Owned {
         // mark sender as voter
         voters[msg.sender] = true;
 
+        Proposal storage proposal = proposals[_id];
+
         // get against votes for this sender
-        uint256 votesAgainst = proposals[_id].votesAgainst[msg.sender];
+        uint256 votesAgainst = proposal.votesAgainst[msg.sender];
         // do we have against votes for this sender?
         if (votesAgainst > 0) {
             // yes, remove the against votes first
-            proposals[_id].totalVotesAgainst = proposals[_id].totalVotesAgainst.sub(votesAgainst);
-            proposals[_id].votesAgainst[msg.sender] = 0;
+            proposal.totalVotesAgainst = proposal.totalVotesAgainst.sub(votesAgainst);
+            proposal.votesAgainst[msg.sender] = 0;
         }
 
         // calculate voting power in case voting for twice
-        uint256 vote = votesOf(msg.sender).sub(proposals[_id].votesFor[msg.sender]);
+        uint256 vote = votesOf(msg.sender).sub(proposal.votesFor[msg.sender]);
 
         // increase total for votes of the proposal
-        proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.add(vote);
+        proposal.totalVotesFor = proposal.totalVotesFor.add(vote);
         // set for votes to the votes of the sender
-        proposals[_id].votesFor[msg.sender] = votesOf(msg.sender);
+        proposal.votesFor[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
-        proposals[_id].totalAvailableVotes = totalVotes;
+        proposal.totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
-        proposals[_id].quorum = calculateQuorumRatio(_id);
+        proposal.quorum = calculateQuorumRatio(_id);
         // update vote lock
-        updateVoteLock(proposals[_id].end);
+        updateVoteLock(proposal.end);
 
         // emit vote event
         emit Vote(_id, msg.sender, true, vote);
@@ -583,27 +585,29 @@ contract BancorGovernance is Owned {
         // mark sender as voter
         voters[msg.sender] = true;
 
+        Proposal storage proposal = proposals[_id];
+
         // get against votes for this sender
-        uint256 votesFor = proposals[_id].votesFor[msg.sender];
+        uint256 votesFor = proposal.votesFor[msg.sender];
         // do we have for votes for this sender?
         if (votesFor > 0) {
-            proposals[_id].totalVotesFor = proposals[_id].totalVotesFor.sub(votesFor);
-            proposals[_id].votesFor[msg.sender] = 0;
+            proposal.totalVotesFor = proposal.totalVotesFor.sub(votesFor);
+            proposal.votesFor[msg.sender] = 0;
         }
 
         // calculate voting power in case voting against twice
-        uint256 vote = votesOf(msg.sender).sub(proposals[_id].votesAgainst[msg.sender]);
+        uint256 vote = votesOf(msg.sender).sub(proposal.votesAgainst[msg.sender]);
         // increase total against votes of the proposal
-        proposals[_id].totalVotesAgainst = proposals[_id].totalVotesAgainst.add(vote);
+        proposal.totalVotesAgainst = proposal.totalVotesAgainst.add(vote);
 
         // set against votes to the votes of the sender
-        proposals[_id].votesAgainst[msg.sender] = votesOf(msg.sender);
+        proposal.votesAgainst[msg.sender] = votesOf(msg.sender);
         // update total votes available on the proposal
-        proposals[_id].totalAvailableVotes = totalVotes;
+        proposal.totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
-        proposals[_id].quorum = calculateQuorumRatio(_id);
+        proposal.quorum = calculateQuorumRatio(_id);
         // update vote lock
-        updateVoteLock(proposals[_id].end);
+        updateVoteLock(proposal.end);
 
         // emit vote event
         emit Vote(_id, msg.sender, false, vote);
