@@ -283,57 +283,65 @@ contract BancorGovernance is Owned {
     /**
      * @notice does the common vote finalization
      *
-     * @param _proposal the proposal to vote
+     * @param _id the id of the proposal to vote
      * @param _for is this vote for or against the proposal
      */
-    function vote(Proposal storage _proposal, bool _for) private onlyStaker {
+    function vote(uint256 _id, bool _for)
+        private
+        onlyStaker
+        proposalExists(_id)
+        proposalOpen(_id)
+        proposalNotEnded(_id)
+    {
+        Proposal storage proposal = proposals[_id];
+
         // mark sender as voter
         voters[msg.sender] = true;
 
         if (_for) {
-            uint256 votesAgainst = _proposal.votesAgainst[msg.sender];
+            uint256 votesAgainst = proposal.votesAgainst[msg.sender];
             // do we have against votes for this sender?
             if (votesAgainst > 0) {
                 // yes, remove the against votes first
-                _proposal.totalVotesAgainst = _proposal.totalVotesAgainst.sub(votesAgainst);
-                _proposal.votesAgainst[msg.sender] = 0;
+                proposal.totalVotesAgainst = proposal.totalVotesAgainst.sub(votesAgainst);
+                proposal.votesAgainst[msg.sender] = 0;
             }
         } else {
             // get against votes for this sender
-            uint256 votesFor = _proposal.votesFor[msg.sender];
+            uint256 votesFor = proposal.votesFor[msg.sender];
             // do we have for votes for this sender?
             if (votesFor > 0) {
-                _proposal.totalVotesFor = _proposal.totalVotesFor.sub(votesFor);
-                _proposal.votesFor[msg.sender] = 0;
+                proposal.totalVotesFor = proposal.totalVotesFor.sub(votesFor);
+                proposal.votesFor[msg.sender] = 0;
             }
         }
 
         // calculate voting power in case voting against twice
         uint256 voteAmount = votesOf(msg.sender).sub(
-            _for ? _proposal.votesFor[msg.sender] : _proposal.votesAgainst[msg.sender]
+            _for ? proposal.votesFor[msg.sender] : proposal.votesAgainst[msg.sender]
         );
 
         if (_for) {
             // increase total for votes of the proposal
-            _proposal.totalVotesFor = _proposal.totalVotesFor.add(voteAmount);
+            proposal.totalVotesFor = proposal.totalVotesFor.add(voteAmount);
             // set for votes to the votes of the sender
-            _proposal.votesFor[msg.sender] = votesOf(msg.sender);
+            proposal.votesFor[msg.sender] = votesOf(msg.sender);
         } else {
             // increase total against votes of the proposal
-            _proposal.totalVotesAgainst = _proposal.totalVotesAgainst.add(voteAmount);
+            proposal.totalVotesAgainst = proposal.totalVotesAgainst.add(voteAmount);
             // set against votes to the votes of the sender
-            _proposal.votesAgainst[msg.sender] = votesOf(msg.sender);
+            proposal.votesAgainst[msg.sender] = votesOf(msg.sender);
         }
 
         // update total votes available on the proposal
-        _proposal.totalAvailableVotes = totalVotes;
+        proposal.totalAvailableVotes = totalVotes;
         // recalculate quorum based on overall votes
-        _proposal.quorum = calculateQuorumRatio(_proposal);
+        proposal.quorum = calculateQuorumRatio(proposal);
         // update vote lock
-        updateVoteLock(_proposal.end);
+        updateVoteLock(proposal.end);
 
         // emit vote event
-        emit Vote(_proposal.id, msg.sender, _for, voteAmount);
+        emit Vote(proposal.id, msg.sender, _for, voteAmount);
     }
 
     /**
@@ -616,15 +624,8 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote for
      */
-    function voteFor(uint256 _id)
-        public
-        onlyStaker
-        proposalExists(_id)
-        proposalOpen(_id)
-        proposalNotEnded(_id)
-    {
-        Proposal storage proposal = proposals[_id];
-        vote(proposal, true);
+    function voteFor(uint256 _id) public {
+        vote(_id, true);
     }
 
     /**
@@ -632,14 +633,7 @@ contract BancorGovernance is Owned {
      *
      * @param _id id of the proposal to vote against
      */
-    function voteAgainst(uint256 _id)
-        public
-        onlyStaker
-        proposalExists(_id)
-        proposalOpen(_id)
-        proposalNotEnded(_id)
-    {
-        Proposal storage proposal = proposals[_id];
-        vote(proposal, false);
+    function voteAgainst(uint256 _id) public {
+        vote(_id, false);
     }
 }
