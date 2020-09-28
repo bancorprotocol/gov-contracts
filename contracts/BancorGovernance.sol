@@ -200,6 +200,8 @@ contract BancorGovernance is Owned {
      * @param _govToken token used to represents votes
      */
     constructor(IERC20 _govToken) public {
+        require(address(_govToken) != address(0), "ERR_NO_TOKEN");
+
         proposalCount = 0;
         totalVotes = 0;
         govToken = _govToken;
