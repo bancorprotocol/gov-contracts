@@ -72,10 +72,19 @@ module.exports = {
         `https://ropsten.infura.io/v3/${INFURA_TOKEN}`
       ),
       network_id: 3,       // Ropsten's id
-      gas: 5500000,        // Ropsten has a lower block limit than mainnet
-      gasPrice: web3.utils.toWei("270", "gwei"),
+      gas: 2500000,        // Ropsten has a lower block limit than mainnet
+      gasPrice: web3.utils.toWei("200", "gwei"),
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
+    kovan: {
+      provider: () => new HDWalletProvider(
+        MNEMONIC,
+        `https://kovan.infura.io/v3/${INFURA_TOKEN}`
+      ),
+      network_id: 42,      // Kovan's id
+      gasPrice: web3.utils.toWei("20", "gwei"),
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
     // Useful for private networks
