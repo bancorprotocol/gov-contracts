@@ -24,6 +24,13 @@ Bancor Governance contracts
 | BancorGovernance                  | [`0x05AA3da21D2706681837a896433E62deEeEaB1f1`](https://ropsten.etherscan.io/address/0x05AA3da21D2706681837a896433E62deEeEaB1f1) | Bancor Governance Contract           |
 | wETH                              | [`0xc778417E063141139Fce010982780140Aa0cD5Ab`](https://ropsten.etherscan.io/address/0xc778417E063141139Fce010982780140Aa0cD5Ab) | Wrapped ETH configured as vote Token |
 
+### Kovan
+
+| Contract                          | Address                                      | Comment                              |
+|-----------------------------------|----------------------------------------------|--------------------------------------|
+| BancorGovernance                  | [`0x6F1DfdA2a7303d88d9a5AEe694988158102de668`](https://kovan.etherscan.io/address/0x6F1DfdA2a7303d88d9a5AEe694988158102de668) | Bancor Governance Contract           |
+| wETH                              | [`0xd0a1e359811322d97991e03f863a0c30c2cf029c`](https://kovan.etherscan.io/address/0xd0a1e359811322d97991e03f863a0c30c2cf029c) | Wrapped ETH configured as vote Token |
+
 ### Features
 - Updated to the latest version of Open Zeppelin contracts
 - Solidity 0.6.12
