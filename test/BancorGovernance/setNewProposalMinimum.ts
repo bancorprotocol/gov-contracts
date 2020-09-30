@@ -24,27 +24,27 @@ contract("BancorGovernance", async (accounts) => {
     governance = await BancorGovernance.new(govToken.address)
   })
 
-  describe("#setVoteMinimum()", async () => {
-    it("should set vote minimum from owner", async () => {
-      const voteMinimumBefore = await governance.voteMinimum.call()
-      assert.strictEqual(decimals.toString(), voteMinimumBefore.toString())
+  describe("#setNewProposalMinimum()", async () => {
+    it("should set new proposal minimum from owner", async () => {
+      const minimumBefore = await governance.newProposalMinimum.call()
+      assert.strictEqual(decimals.toString(), minimumBefore.toString())
 
-      const voteMinimum = 5
-      await governance.setVoteMinimum((voteMinimum * decimals).toString(), {
+      const minimum = 5
+      await governance.setNewProposalMinimum((minimum * decimals).toString(), {
         from: owner,
       })
 
-      const voteMinimumAfter = await governance.voteMinimum.call()
+      const minimumAfter = await governance.newProposalMinimum.call()
       assert.strictEqual(
-        (voteMinimum * decimals).toString(),
-        voteMinimumAfter.toString()
+        (minimum * decimals).toString(),
+        minimumAfter.toString()
       )
     })
 
     it("should fail to set minimum to 0", async () => {
       await truffleAssert.fails(
-        // set vote minimum
-        governance.setVoteMinimum((0).toString(), {from: owner}),
+        // set new proposal minimum
+        governance.setNewProposalMinimum((0).toString(), {from: owner}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ZERO_VALUE"
       )
@@ -52,8 +52,8 @@ contract("BancorGovernance", async (accounts) => {
 
     it("should fail to set minimum lock to more than total supply", async () => {
       await truffleAssert.fails(
-        // set vote minimum
-        governance.setVoteMinimum((100 * decimals).toString(), {
+        // set new proposal minimum
+        governance.setNewProposalMinimum((100 * decimals).toString(), {
           from: owner,
         }),
         truffleAssert.ErrorType.REVERT,
@@ -61,10 +61,10 @@ contract("BancorGovernance", async (accounts) => {
       )
     })
 
-    it("should fail to set vote minimum from someone", async () => {
+    it("should fail to set new proposal minimum from someone", async () => {
       await truffleAssert.fails(
-        // set vote minimum
-        governance.setVoteMinimum((0).toString(), {from: someone}),
+        // set new proposal minimum
+        governance.setNewProposalMinimum((0).toString(), {from: someone}),
         truffleAssert.ErrorType.REVERT,
         "ERR_ACCESS_DENIED"
       )

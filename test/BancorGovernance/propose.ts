@@ -97,7 +97,7 @@ contract("BancorGovernance", async (accounts) => {
           {from: proposer}
         ),
         truffleAssert.ErrorType.REVERT,
-        "ERR_NOT_VOTE_MINIMUM"
+        "ERR_INSUFFICIENT_STAKE"
       )
     })
   })

@@ -101,9 +101,9 @@ updates the quorum needed for proposals to pass
 
 
 
-### `setVoteMinimum(uint256 _voteMinimum)` (public)
+### `setNewProposalMinimum(uint256 _minimum)` (public)
 
-updates the required votes needed to propose
+updates the minimum stake required to create a new proposal
 
 
 
@@ -221,9 +221,9 @@ triggered when the quorum is updated
 
 
 
-### `VoteMinimumUpdated(uint256 _voteMinimum)`
+### `NewProposalMinimumUpdated(uint256 _minimum)`
 
-triggered when the vote minimum is updated
+triggered when the minimum stake required to create a new proposal is updated
 
 
 

@@ -140,28 +140,28 @@ contract BancorGovernance is Owned {
     /**
      * @notice triggered when the quorum is updated
      *
-     * @param _quorum   the new quorum
+     * @param _quorum   new quorum
      */
     event QuorumUpdated(uint256 _quorum);
 
     /**
-     * @notice triggered when the vote minimum is updated
+     * @notice triggered when the minimum stake required to create a new proposal is updated
      *
-     * @param _voteMinimum  the new vote minimum
+     * @param _minimum  new minimum
      */
-    event VoteMinimumUpdated(uint256 _voteMinimum);
+    event NewProposalMinimumUpdated(uint256 _minimum);
 
     /**
      * @notice triggered when the vote duration is updated
      *
-     * @param _voteDuration the new vote duration
+     * @param _voteDuration new vote duration
      */
     event VoteDurationUpdated(uint256 _voteDuration);
 
     /**
      * @notice triggered when the vote lock duration is updated
      *
-     * @param _duration the new vote lock duration
+     * @param _duration new vote lock duration
      */
     event VoteLockDurationUpdated(uint256 _duration);
 
@@ -174,7 +174,7 @@ contract BancorGovernance is Owned {
     // the fraction of vote lock used to lock voter to avoid rapid unstaking
     uint256 public constant voteLockFraction = 10;
     // minimum stake required to propose
-    uint256 public voteMinimum = 1e18;
+    uint256 public newProposalMinimum = 1e18;
     // quorum needed for a proposal to pass, default = 20%
     uint256 public quorum = 200000;
     // sum of current total votes
@@ -446,14 +446,14 @@ contract BancorGovernance is Owned {
     }
 
     /**
-     * @notice updates the required votes needed to propose
+     * @notice updates the minimum stake required to create a new proposal
      *
-     * @param _voteMinimum required minimum votes
+     * @param _minimum minimum stake
      */
-    function setVoteMinimum(uint256 _voteMinimum) public ownerOnly greaterThanZero(_voteMinimum) {
-        require(_voteMinimum <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
-        voteMinimum = _voteMinimum;
-        emit VoteMinimumUpdated(_voteMinimum);
+    function setNewProposalMinimum(uint256 _minimum) public ownerOnly greaterThanZero(_minimum) {
+        require(_minimum <= govToken.totalSupply(), "ERR_EXCEEDS_TOTAL_SUPPLY");
+        newProposalMinimum = _minimum;
+        emit NewProposalMinimumUpdated(_minimum);
     }
 
     /**
@@ -487,7 +487,7 @@ contract BancorGovernance is Owned {
      * @param _hash ipfs hash of the proposal description
      */
     function propose(address _executor, string memory _hash) public {
-        require(votesOf(msg.sender) > voteMinimum, "ERR_NOT_VOTE_MINIMUM");
+        require(votesOf(msg.sender) > newProposalMinimum, "ERR_INSUFFICIENT_STAKE");
 
         uint256 id = proposalCount;
 
