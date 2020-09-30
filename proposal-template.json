@@ -1,18 +1,12 @@
 {
   "payload": {
-    "body": "<markdown body>",
-    "choices": [
-      "For",
-      "Against"
-    ],
-    "start": 1599843600,
-    "end": 1600110000,
-    "metadata": {},
-    "name": "Whitelist liquidity pool xyz",
-    "snapshot": "10841820"
+    "body": "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
+    "metadata": {
+      "github": "https://github.com/bancorprotocol/contracts-solidity/blob/master/solidity/contracts/BancorNetwork.sol",
+      "discourse": "https://www.reddit.com/r/Bancor/comments/iv39oc/5_most_important_defi_breakthroughs_of_q3_2020/"
+    },
+    "name": "Lorem ipsum dolor sit amet"
   },
-  "timestamp": "1599844596",
-  "token": "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03",
-  "type": "proposal",
-  "version": "0.2.2"
+  "timestamp": "1601472351",
+  "revision": "0.0.1"
 }
