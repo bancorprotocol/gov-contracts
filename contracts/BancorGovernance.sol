@@ -193,8 +193,6 @@ contract BancorGovernance is Owned {
     mapping(address => uint256) public voteLocks;
     // number of votes for each user
     mapping(address => uint256) private votes;
-    // true for an address that belongs to a voter
-    mapping(address => bool) public voters;
 
     /**
      * @notice used to initialize a new BancorGovernance contract
@@ -294,9 +292,6 @@ contract BancorGovernance is Owned {
         proposalNotEnded(_id)
     {
         Proposal storage proposal = proposals[_id];
-
-        // mark sender as voter
-        voters[msg.sender] = true;
 
         if (_for) {
             uint256 votesAgainst = proposal.votesAgainst[msg.sender];
@@ -532,7 +527,7 @@ contract BancorGovernance is Owned {
         // get voting info of proposal
         (uint256 forRatio, uint256 againstRatio, uint256 quorumRatio) = proposalStats(_id);
         // check proposal state
-        require(proposals[_id].quorumRequired < quorumRatio, "ERR_NO_QUORUM");
+        require(quorumRatio >= proposals[_id].quorumRequired, "ERR_NO_QUORUM");
 
         // if the proposal is still open
         if (proposals[_id].open) {
