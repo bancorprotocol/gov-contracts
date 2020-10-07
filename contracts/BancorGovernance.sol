@@ -241,7 +241,7 @@ contract BancorGovernance is Owned {
      */
     modifier proposalNotEnded(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.end > block.timestamp, "ERR_ENDED");
+        require(proposal.end >= block.timestamp, "ERR_ENDED");
         _;
     }
 
@@ -252,7 +252,7 @@ contract BancorGovernance is Owned {
      */
     modifier proposalEnded(uint256 _id) {
         Proposal memory proposal = proposals[_id];
-        require(proposal.end < block.timestamp, "ERR_NOT_ENDED");
+        require(proposal.end <= block.timestamp, "ERR_NOT_ENDED");
         _;
     }
 
