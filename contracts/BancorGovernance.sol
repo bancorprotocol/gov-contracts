@@ -539,6 +539,7 @@ contract BancorGovernance is Owned {
         proposals[_id].executed = true;
 
         // do execution on the contract to be executed
+        // note that this is a safe call as it was part of the proposal that was voted on
         IExecutor(proposals[_id].executor).execute(_id, forRatio, againstRatio, quorumRatio);
 
         // emit proposal executed event
