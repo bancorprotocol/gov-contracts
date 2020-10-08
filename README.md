@@ -21,8 +21,8 @@ Bancor Governance contracts
 
 | Contract                          | Address                                      | Comment                              |
 |-----------------------------------|----------------------------------------------|--------------------------------------|
-| BancorGovernance                  | [`0xdEC39088ee1A837090a7647Be0039b2E8B3a8349`](https://ropsten.etherscan.io/address/0xdEC39088ee1A837090a7647Be0039b2E8B3a8349) | Bancor Governance Contract           |
-| wETH                              | [`0xc778417E063141139Fce010982780140Aa0cD5Ab`](https://ropsten.etherscan.io/address/0xc778417E063141139Fce010982780140Aa0cD5Ab) | Wrapped ETH configured as vote Token |
+| BancorGovernance                  | [`0x161f28A417361961E946Ae03EF0A425008b7F01B`](https://ropsten.etherscan.io/address/0x161f28A417361961E946Ae03EF0A425008b7F01B) | Bancor Governance Contract           |
+| gBNT                              | [`0x83ec8129b1F54BA5b0f47bD902A79C803e20A249`](https://ropsten.etherscan.io/address/0x83ec8129b1F54BA5b0f47bD902A79C803e20A249) | Bancor Governance Token              |
 
 ### Kovan
 
