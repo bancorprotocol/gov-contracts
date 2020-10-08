@@ -59,7 +59,7 @@ contract BancorGovernance is Owned {
         mapping(address => uint256) votesAgainst;
         uint256 totalVotesFor;
         uint256 totalVotesAgainst;
-        uint256 start; // block start;
+        uint256 start; // start timestmp;
         uint256 end; // start + voteDuration
         uint256 totalAvailableVotes;
         uint256 quorum;
@@ -75,7 +75,7 @@ contract BancorGovernance is Owned {
      * @notice triggered when a new proposal is created
      *
      * @param _id       proposal id
-     * @param _start    voting start block
+     * @param _start    voting start timestamp
      * @param _duration voting duration
      * @param _proposer proposal creator
      * @param _executor contract that will exeecute the proposal once it passes
@@ -269,7 +269,7 @@ contract BancorGovernance is Owned {
     /**
      * @notice Updates the vote lock on the sender
      *
-     * @param _proposalEnd  the block number when the proposal ends
+     * @param _proposalEnd  proposal end time
      */
     function updateVoteLock(uint256 _proposalEnd) private onlyStaker {
         voteLocks[msg.sender] = Math.max(
