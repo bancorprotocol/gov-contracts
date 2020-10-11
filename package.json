@@ -36,6 +36,7 @@
     "@truffle/hdwallet-provider": "^1.1.0",
     "bignumber.js": "^9.0.0",
     "ganache-core": "^2.11.3",
+    "husky": "^4.3.0",
     "prettier": "^2.1.1",
     "prettier-plugin-solidity": "^1.0.0-alpha.57",
     "snyk": "^1.393.0",
