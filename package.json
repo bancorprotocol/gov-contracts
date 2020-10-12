@@ -20,6 +20,7 @@
   "scripts": {
     "build": "truffle compile",
     "migrate": "truffle migrate",
+    "export": "node ./scripts/export.js",
     "test": "truffle test",
     "coverage": "truffle run coverage",
     "doc": "solidity-docgen --exclude ./contracts/test/,./contracts/truffle/",
