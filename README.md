@@ -17,6 +17,13 @@ Bancor Governance contracts
 
 ## Networks
 
+### Ethereum Mainnet
+
+| Contract                          | Address                                      | Comment                              |
+|-----------------------------------|----------------------------------------------|--------------------------------------|
+| BancorGovernance                  | [`0x892f481bd6e9d7d26ae365211d9b45175d5d00e4`](https://etherscan.io/address/0x892f481bd6e9d7d26ae365211d9b45175d5d00e4) | Bancor Governance Contract           |
+| vBNT                              | [`0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94`](https://etherscan.io/address/0x48Fb253446873234F2fEBbF9BdeAA72d9d387f94) | Bancor Governance Token              |
+
 ### Ropsten
 
 | Contract                          | Address                                      | Comment                              |
