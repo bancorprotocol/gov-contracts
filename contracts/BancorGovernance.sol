@@ -482,7 +482,7 @@ contract BancorGovernance is Owned {
      * @param _hash ipfs hash of the proposal description
      */
     function propose(address _executor, string memory _hash) public {
-        require(votesOf(msg.sender) > newProposalMinimum, "ERR_INSUFFICIENT_STAKE");
+        require(votesOf(msg.sender) >= newProposalMinimum, "ERR_INSUFFICIENT_STAKE");
 
         uint256 id = proposalCount;
 

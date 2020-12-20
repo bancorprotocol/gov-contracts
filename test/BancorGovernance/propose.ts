@@ -1,6 +1,7 @@
 import {stake} from "./utils"
 // @ts-ignore
 import * as truffleAssert from "truffle-assertions"
+import BigNumber from "bignumber.js"
 
 contract("BancorGovernance", async (accounts) => {
   const BancorGovernance = artifacts.require("BancorGovernance")
@@ -86,6 +87,10 @@ contract("BancorGovernance", async (accounts) => {
     })
 
     it("should not be able to propose if not staked min amount", async () => {
+
+      // set new minimum
+      await governance.setNewProposalMinimum(web3.utils.toWei("2", "ether"));
+
       // stake
       await stake(governance, govToken, proposer, 1)
 
